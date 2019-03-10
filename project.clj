@@ -35,7 +35,7 @@
    [:cljsbuild :builds :app :compiler :output-dir]
    [:cljsbuild :builds :app :compiler :output-to]]
 
-  :source-paths ["src/clj" "src/cljc"]
+  :source-paths ["src/clj" "src/cljc" "src/cljs"]
   :resource-paths ["resources" "target/cljsbuild"]
 
   :minify-assets
@@ -100,13 +100,14 @@
                                   [figwheel-sidecar "0.5.18"]
                                   [nrepl "0.6.0"]
                                   [pjstadig/humane-test-output "0.9.0"]
+                                  [com.bhauman/figwheel-main "0.2.1-SNAPSHOT"]
                                   
  ]
 
-                   :source-paths ["env/dev/clj"]
+                   :source-paths ["env/dev/clj" "env/dev/cljs"]
                    :plugins [[lein-figwheel "0.5.18"]
                              [lein-doo "0.1.10"]
-                             [cider/cider-nrepl "0.19.0"]
+                             [cider/cider-nrepl "0.21.0"]
                              [org.clojure/tools.namespace "0.3.0-alpha4"
                               :exclusions [org.clojure/tools.reader]]
                              [refactor-nrepl "2.4.0"

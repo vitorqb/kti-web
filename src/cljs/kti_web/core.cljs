@@ -1,4 +1,4 @@
-(ns kti-web.core
+(ns ^:figwheel-hooks kti-web.core
   (:require
    [reagent.core :as reagent :refer [atom]]
    [reagent.session :as session]
@@ -29,7 +29,7 @@
 (defn home-page []
   (fn []
     [:span.main
-     [:h1 "Welcome to kti-web"]
+     [:h1 "Welcom to kti-web"]
      [:ul
       [:li [:a {:href (path-for :items)} "Items of kti-web"]]
       [:li [:a {:href "/borken/link"} "Borken link"]]]]))
@@ -91,6 +91,8 @@
 
 (defn mount-root []
   (reagent/render [current-page] (.getElementById js/document "app")))
+
+(defn ^:after-load re-render [] (mount-root))
 
 (defn init! []
   (clerk/initialize!)
