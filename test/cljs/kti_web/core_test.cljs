@@ -1,9 +1,10 @@
 (ns kti-web.core-test
   (:require
-   [cljs.test :refer-macros [is are deftest testing use-fixtures]]
+   [cljs.test :refer-macros [is are deftest testing use-fixtures async]]
    [reagent.core :as reagent :refer [atom]]
    [kti-web.core :as rc]
-   [oops.core :as oops]))55
+   [oops.core :as oops]
+   [cljs.core.async :refer [>! <! take! put! go chan]]))
 
 
 (def isClient (not (nil? (try (.-document js/window)
@@ -55,20 +56,27 @@
 
 (deftest test-capture-form
   (testing "Updates capture-input value on change"
-    (let [comp-1    (rc/capture-form)
-          comp      (comp-1)
-          on-change (get-in comp [2 2 1 :on-change])]
+    (let [comp-1      (rc/capture-form)
+          comp        (comp-1 {:submit-chan (chan) :result-chan (chan)})
+          on-change   (get-in comp [2 2 1 :on-change])]
       (on-change "new-input")
       (is (= (get-in (comp-1) [2 2 1 :value]) "new-input"))))
-  (testing "Calls ajax-capture! on submit"
-    (let [ajax-capture!-arg   (atom nil)
-          ajax-capture!       (fn [x] (reset! ajax-capture!-arg x))
+  (testing "Calls uses channels on submit"
+    (let [submit-chan         (chan)
+          result-chan         (chan)
           prevent-default-call-count (atom 0)
-          prevent-default     (fn [x] (swap! prevent-default-call-count + 1))
-          comp                ((rc/capture-form {:ajax-capture! ajax-capture!}))
+          prevent-default     #(swap! prevent-default-call-count + 1)
+          comp-1              (rc/capture-form {:submit-chan submit-chan
+                                                :result-chan result-chan})
+          comp                (comp-1)
           on-change           (get-in comp [2 2 1 :on-change])
           on-submit           (get-in comp [2 1 :on-submit])]
       (on-change "foo")
       (on-submit (clj->js {:preventDefault prevent-default}))
       (is (= @prevent-default-call-count 1))
-      (is (= @ajax-capture!-arg "foo")))))
+      (async done
+             (go (is (= (<! submit-chan) "foo"))
+                 (>! result-chan "response")
+                 (js/setTimeout
+                  (fn [] (is (= (get-in (comp-1) [2 4 1]) "response")) (done))
+                  2))))))

@@ -4,7 +4,8 @@
    [reagent.session :as session]
    [reitit.frontend :as reitit]
    [clerk.core :as clerk]
-   [accountant.core :as accountant]))
+   [accountant.core :as accountant]
+   [cljs.core.async :refer [chan go take! put! <! >!]]))
 
 (declare capture-form)
 
@@ -32,7 +33,14 @@
   (fn []
     [:span.main
      [:h1 "Welcome to kti-web"]
-     [capture-form]
+     (let [submit-chan (chan) result-chan (chan) value (atom 0)]
+       (go
+         (while true
+           (let [submit-arg (<! submit-chan)]
+             (prn "Submitted " submit-arg)
+             (put! result-chan @value)
+             (swap! value + 1))))
+       [capture-form {:submit-chan submit-chan :result-chan result-chan}])
      [:ul
       [:li [:a {:href (path-for :items)} "Items of kti-web"]]
       [:li [:a {:href "/borken/link"} "Borken link"]]]]))
@@ -46,15 +54,19 @@
             :value value}]
    [:div [:i "(current value: " value ")"]]])
 
-(defn capture-form [{:keys [ajax-capture!]}]
-  (let [value (r/atom "")]
+(defn capture-form [{:keys [submit-chan result-chan]}]
+  (let [value (r/atom "") result (r/atom "")]
     (fn []
       [:div
        [:h3 "Capture Form"]
        [:form
-        {:on-submit (fn [e] (.preventDefault e) (ajax-capture! @value))}
+        {:on-submit (fn [e]
+                      (.preventDefault e)
+                      (put! submit-chan @value)
+                      (take! result-chan #(reset! result %)))}
         [capture-input {:value @value :on-change #(reset! value %)}]
-        [:button {:type "submit"} "Submit"]]])))
+        [:button {:type "submit"} "Submit"]
+        [:div @result]]])))
 
 (defn items-page []
   (fn []
