@@ -5,7 +5,8 @@
    [reitit.frontend :as reitit]
    [clerk.core :as clerk]
    [accountant.core :as accountant]
-   [cljs.core.async :refer [chan go take! put! <! >!]]))
+   [cljs.core.async :refer [chan go take! put! <! >!]]
+   [cljs-http.client :as http]))
 
 (declare capture-form)
 
@@ -26,6 +27,17 @@
     (:path (reitit/match-by-name router route))))
 
 (path-for :about)
+;; -----------------------------------------------------------------------------
+;; Ajax
+(defn post-captured-reference! [ref]
+  (let [out-chan (chan)]
+    (go (let [{:keys [success body]}
+              (->> {:with-credentials? false :json-params {:reference ref}}
+                   (http/post "http://localhost:3333/api/captured-references")
+                   (<!))]
+          (>! out-chan (if success body {:error true}))))
+    out-chan))
+
 ;; -------------------------
 ;; Page components
 
@@ -33,14 +45,7 @@
   (fn []
     [:span.main
      [:h1 "Welcome to kti-web"]
-     (let [submit-chan (chan) result-chan (chan) value (atom 0)]
-       (go
-         (while true
-           (let [submit-arg (<! submit-chan)]
-             (prn "Submitted " submit-arg)
-             (put! result-chan @value)
-             (swap! value + 1))))
-       [capture-form {:submit-chan submit-chan :result-chan result-chan}])
+     [capture-form {:post! post-captured-reference!}]
      [:ul
       [:li [:a {:href (path-for :items)} "Items of kti-web"]]
       [:li [:a {:href "/borken/link"} "Borken link"]]]]))
@@ -54,19 +59,30 @@
             :value value}]
    [:div [:i "(current value: " value ")"]]])
 
-(defn capture-form [{:keys [submit-chan result-chan]}]
-  (let [value (r/atom "") result (r/atom "")]
+(defn capture-form [{:keys [post! c-done]}]
+  (let [state (r/atom {:value nil :loading false :result nil})
+        set-loading! #(swap! state assoc :loading true :result nil)
+        set-result! #(swap! state assoc :loading false :result %)
+        extract-result
+        (fn [{:keys [id reference error]}]
+          (if error "Error!" (str "Created with id " id " and ref " reference)))
+        handle-submit
+        (fn [e]
+          (.preventDefault e)
+          (set-loading!)
+          (go (let [resp (-> @state :value post! <!)]
+                (set-result! (extract-result resp))
+                (and c-done (>! c-done 1)))))]
     (fn []
       [:div
        [:h3 "Capture Form"]
        [:form
-        {:on-submit (fn [e]
-                      (.preventDefault e)
-                      (put! submit-chan @value)
-                      (take! result-chan #(reset! result %)))}
-        [capture-input {:value @value :on-change #(reset! value %)}]
+        {:on-submit handle-submit}
+        [capture-input {:value (:value @state)
+                        :on-change #(swap! state assoc :value %)}]
         [:button {:type "submit"} "Submit"]
-        [:div @result]]])))
+        [:div (:result @state)]
+        (if (:loading state) [:div "Loading..."])]])))
 
 (defn items-page []
   (fn []

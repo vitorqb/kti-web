@@ -18,7 +18,8 @@
                  [pez/clerk "1.0.0"]
                  [venantius/accountant "0.2.4"
                   :exclusions [org.clojure/tools.reader]]
-                 [binaryage/oops "0.7.0"]]
+                 [binaryage/oops "0.7.0"]
+                 [cljs-http "0.1.46"]]
 
   :plugins [[lein-environ "1.1.0"]
             [lein-cljsbuild "1.1.7"]

@@ -57,26 +57,24 @@
 (deftest test-capture-form
   (testing "Updates capture-input value on change"
     (let [comp-1      (rc/capture-form)
-          comp        (comp-1 {:submit-chan (chan) :result-chan (chan)})
+          comp        (comp-1)
           on-change   (get-in comp [2 2 1 :on-change])]
       (on-change "new-input")
       (is (= (get-in (comp-1) [2 2 1 :value]) "new-input"))))
-  (testing "Calls uses channels on submit"
-    (let [submit-chan         (chan)
-          result-chan         (chan)
+  (testing "Sets result after submit"
+    (let [c (chan 1)
+          c-done (chan 1)
           prevent-default-call-count (atom 0)
-          prevent-default     #(swap! prevent-default-call-count + 1)
-          comp-1              (rc/capture-form {:submit-chan submit-chan
-                                                :result-chan result-chan})
-          comp                (comp-1)
-          on-change           (get-in comp [2 2 1 :on-change])
-          on-submit           (get-in comp [2 1 :on-submit])]
+          prevent-default #(swap! prevent-default-call-count + 1)
+          comp-1 (rc/capture-form {:post! (constantly c) :c-done c-done})
+          comp (comp-1)
+          on-change (get-in comp [2 2 1 :on-change])
+          on-submit (get-in comp [2 1 :on-submit])]
       (on-change "foo")
       (on-submit (clj->js {:preventDefault prevent-default}))
       (is (= @prevent-default-call-count 1))
-      (async done
-             (go (is (= (<! submit-chan) "foo"))
-                 (>! result-chan "response")
-                 (js/setTimeout
-                  (fn [] (is (= (get-in (comp-1) [2 4 1]) "response")) (done))
-                  2))))))
+      (async done (go (>! c {:id 1 :reference "foo"})
+                      (<! c-done)
+                      (is (= (get-in (comp-1) [2 4 1])
+                             "Created with id 1 and ref foo"))
+                      (done))))))
