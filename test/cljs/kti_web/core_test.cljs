@@ -78,3 +78,22 @@
                       (is (= (get-in (comp-1) [2 4 1])
                              "Created with id 1 and ref foo"))
                       (done))))))
+
+(deftest test-captured-refs-table
+  (let [c (chan 1)
+        c-done (chan 1)
+        comp-1 (rc/captured-refs-table {:get! (constantly c) :c-done c-done})
+        comp (comp-1)]
+    (is (= [:div "LOADING..."] (get comp 3)))
+    (async done (go (>! c [{:id 1
+                            :reference "foo"
+                            :created-at "2018-01-01T00:00:00"
+                            :classified true}])
+                    (<! c-done)
+                    (is (= :table (get-in (comp-1) [3 0])))
+                    (is (= :thead (get-in (comp-1) [3 1 0])))
+                    (is (= ["id" "ref" "created at" "classified?"]
+                           (-> (comp-1)
+                               (get-in [3 1 1 1])
+                               (->> (map #(get % 2))))))
+                    (done)))))

@@ -8,7 +8,7 @@
    [cljs.core.async :refer [chan go take! put! <! >!]]
    [cljs-http.client :as http]))
 
-(declare capture-form)
+(declare capture-form captured-refs-table)
 
 ;; -------------------------
 ;; Routes
@@ -38,6 +38,15 @@
           (>! out-chan (if success body {:error true}))))
     out-chan))
 
+(defn get-captured-references! []
+  (let [out-chan (chan)]
+    (go (let [{:keys [success body]}
+              (->> {:with-credentials? false}
+                   (http/get "http://localhost:3333/api/captured-references")
+                   (<!))]
+          (>! out-chan (if success body {:error true}))))
+    out-chan))
+
 ;; -------------------------
 ;; Page components
 
@@ -46,9 +55,7 @@
     [:span.main
      [:h1 "Welcome to kti-web"]
      [capture-form {:post! post-captured-reference!}]
-     [:ul
-      [:li [:a {:href (path-for :items)} "Items of kti-web"]]
-      [:li [:a {:href "/borken/link"} "Borken link"]]]]))
+     [captured-refs-table {:get! get-captured-references!}]]))
 
 (defn capture-input [{:keys [on-change value]}]
   [:div
@@ -83,6 +90,32 @@
         [:button {:type "submit"} "Submit"]
         [:div (:result @state)]
         (if (:loading state) [:div "Loading..."])]])))
+
+(defn captured-refs-table [{:keys [get! c-done]}]
+  (let [state (r/atom {:loading true :refs nil})
+        headers ["id" "ref" "created at" "classified?"]
+        ref->tr
+        (fn [{:keys [id reference created-at classified]}]
+          [:tr {:key id}
+           [:td id]
+           [:td reference]
+           [:td created-at]
+           [:td (str classified)]])
+        run-get!
+        (fn []
+          (swap! state assoc :loading true :refs nil)
+          (go (swap! state assoc :loading false :refs (<! (get!)))
+              (and c-done (>! c-done 1))))]
+    (run-get!)
+    (fn []
+      [:div
+       [:h3 "Captured References Table"]
+       [:button {:on-click run-get!} "Update"]
+       (if (:loading @state)
+         [:div "LOADING..."]
+         [:table
+          [:thead [:tr (map (fn [x] [:th {:key x} x]) headers)]]
+          [:tbody (->> @state :refs (sort-by :created-at) reverse (map ref->tr))]])])))
 
 (defn items-page []
   (fn []
