@@ -8,7 +8,7 @@
    [cljs.core.async :refer [chan go take! put! <! >!]]
    [cljs-http.client :as http]))
 
-(declare capture-form captured-refs-table)
+(declare capture-form captured-refs-table delete-captured-ref-form)
 
 ;; -------------------------
 ;; Routes
@@ -48,6 +48,16 @@
           (>! out-chan (if success body {:error true}))))
     out-chan))
 
+(defn delete-captured-reference! [id]
+  (let [out-chan (chan)]
+    (go (let [{:keys [success body]}
+              (->> {:with-credentials? false}
+                   (http/delete (str "http://localhost:3333/api/captured-references/"
+                                     id))
+                   (<!))]
+          (>! out-chan (if success body {:error true}))))
+    out-chan))
+
 ;; -------------------------
 ;; Page components
 
@@ -56,6 +66,7 @@
     [:span.main
      [:h1 "Welcome to kti-web"]
      [capture-form {:post! post-captured-reference!}]
+     [delete-captured-ref-form {:delete! delete-captured-reference!}]
      [captured-refs-table {:get! get-captured-references!}]]))
 
 (defn capture-input [{:keys [on-change value]}]
@@ -73,7 +84,7 @@
    [:form
     {:on-submit on-submit}
     [capture-input {:value value :on-change on-change}]
-    [:button {:type "submit"} "Submit"]
+    [:button {:type "submit"} "Capture"]
     [:div result]
     (if loading? [:div "Loading..."])]])
 
@@ -122,6 +133,35 @@
     (run-get!)
     #(captured-refs-table-inner (assoc @state :fn-refresh! run-get!))))
 
+(defn delete-captured-ref-form-inner
+  [{:keys [ref-id result update-ref-id! delete!]}]
+  (let [handle-change #(-> % .-target .-value update-ref-id!)
+        handle-submit
+        (fn [e]
+          (.preventDefault e)
+          (delete! ref-id))]
+    [:div
+     [:form {:on-submit handle-submit}
+      [:h3 "Delete Captured Ref. Form"]
+      [:span "Ref Id: "]
+      [:input {:type "number" :value ref-id :on-change handle-change}]
+      [:div [:i (str "(current value: " ref-id ")")]]
+      [:div [:button {:type "submit"} "Delete"]]
+      (when result [:div (str "Result: " result)])]]))
+
+(defn delete-captured-ref-form [{:keys [delete! c-done]}]
+  (let [state (r/atom {:ref-id nil :result nil})
+        update-ref-id #(swap! state assoc :ref-id %)
+        run-delete!
+        (fn [id]
+          (swap! state assoc :result nil)
+          (go (let [{:keys [error]} (<! (delete! id))]
+                (swap! state assoc :result (if error "Error!" "Deleted!"))
+                (and c-done (>! c-done 1)))))]
+    #(delete-captured-ref-form-inner (assoc @state
+                                            :update-ref-id! update-ref-id
+                                            :delete! run-delete!))))
+
 (defn items-page []
   (fn []
     [:span.main
@@ -131,7 +171,6 @@
                   [:a {:href (path-for :item {:item-id item-id})} "Item: " item-id]])
                (range 1 60))]]))
 
-
 (defn item-page []
   (fn []
     (let [routing-data (session/get :route)
@@ -140,11 +179,9 @@
        [:h1 (str "Item " item " of kti-web")]
        [:p [:a {:href (path-for :items)} "Back to the list of items"]]])))
 
-
 (defn about-page []
   (fn [] [:span.main
           [:h1 "About kti-web"]]))
-
 
 ;; -------------------------
 ;; Translate routes -> page components
@@ -155,7 +192,6 @@
     :about #'about-page
     :items #'items-page
     :item #'item-page))
-
 
 ;; -------------------------
 ;; Page mounting component
