@@ -27,14 +27,12 @@
         (reagent/flush)
         (.removeChild (.-body js/document) div)))))
 
-
 (defn found-in [re div]
   (let [res (.-innerHTML div)]
     (if (re-find re res)
       true
       (do (println "Not found: " res)
           false))))
-
 
 (deftest test-home
   (with-mounted-component (rc/home-page)
@@ -130,5 +128,33 @@
         (is (= [] @delete-args))
         ((get-in comp [1 1 :on-submit]) (clj->js {:preventDefault fn-nothing}))
         (is (= [3] @delete-args))))))
-      
-      
+
+(deftest test-run-req!-base
+  (let [http-fn-chan (chan 1)
+        http-fn-args (atom [])
+        {:keys [http-fn url json-params] :as args}
+        {:http-fn (fn [x y]
+                    (swap! http-fn-args conj [x y])
+                    http-fn-chan)
+         :url "www.google.com"
+         :json-params {:a 1}}
+        chan (rc/run-req! args)]
+    (is (= @http-fn-args [[url (assoc {:with-credentials? false}
+                                      :json-params json-params)]]))
+    (async done
+           (go (>! http-fn-chan {:success true :body 1})
+               (is (= 1 (<! chan)))
+               (done)))))
+
+(deftest test-run-req!-error
+  (let [http-fn-args (atom [])
+        http-fn-chan (chan 1)
+        http-fn (fn [x y]
+                  (swap! http-fn-args conj [x y])
+                  http-fn-chan)
+        res-chan (rc/run-req! {:http-fn http-fn :url 1})]
+    (is (= @http-fn-args [[1 {:with-credentials? false}]]))
+    (async done
+           (go (>! http-fn-chan {:success false})
+               (is (= {:error true} (<! res-chan)))
+               (done)))))

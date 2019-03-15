@@ -8,6 +8,10 @@
    [cljs.core.async :refer [chan go take! put! <! >!]]
    [cljs-http.client :as http]))
 
+;; !!!! TODO -> Manage host
+(def host "http://localhost:3333")
+(def api-url #(str host "/api/" %))
+
 (declare capture-form captured-refs-table delete-captured-ref-form)
 
 ;; -------------------------
@@ -29,34 +33,29 @@
 (path-for :about)
 ;; -----------------------------------------------------------------------------
 ;; Ajax
-;; !!!! TODO -> Abstract
-(defn post-captured-reference! [ref]
-  (let [out-chan (chan)]
-    (go (let [{:keys [success body]}
-              (->> {:with-credentials? false :json-params {:reference ref}}
-                   (http/post "http://localhost:3333/api/captured-references")
-                   (<!))]
+(defn run-req! [{:keys [http-fn url json-params]}]
+  (let [out-chan (chan)
+        req-chan (http-fn url (merge {:with-credentials? false}
+                                     (and json-params {:json-params json-params})))]
+    (go (let [{:keys [success body]} (<! req-chan)]
           (>! out-chan (if success body {:error true}))))
     out-chan))
+
+(defn post-captured-reference! [ref]
+  (run-req!
+   {:http-fn http/post
+    :url (api-url "captured-references")
+    :json-params {:reference ref}}))
 
 (defn get-captured-references! []
-  (let [out-chan (chan)]
-    (go (let [{:keys [success body]}
-              (->> {:with-credentials? false}
-                   (http/get "http://localhost:3333/api/captured-references")
-                   (<!))]
-          (>! out-chan (if success body {:error true}))))
-    out-chan))
+  (run-req!
+   {:http-fn http/get
+    :url (api-url "captured-references")}))
 
 (defn delete-captured-reference! [id]
-  (let [out-chan (chan)]
-    (go (let [{:keys [success body]}
-              (->> {:with-credentials? false}
-                   (http/delete (str "http://localhost:3333/api/captured-references/"
-                                     id))
-                   (<!))]
-          (>! out-chan (if success body {:error true}))))
-    out-chan))
+  (run-req!
+   {:http-fn http/delete
+    :url (api-url (str "captured-references/" id))}))
 
 ;; -------------------------
 ;; Page components
