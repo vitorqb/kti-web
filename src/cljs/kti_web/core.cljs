@@ -29,6 +29,7 @@
 (path-for :about)
 ;; -----------------------------------------------------------------------------
 ;; Ajax
+;; !!!! TODO -> Abstract
 (defn post-captured-reference! [ref]
   (let [out-chan (chan)]
     (go (let [{:keys [success body]}
@@ -66,56 +67,60 @@
             :value value}]
    [:div [:i "(current value: " value ")"]]])
 
+(defn capture-form-inner [{:keys [loading? value result on-submit on-change]}]
+  [:div
+   [:h3 "Capture Form"]
+   [:form
+    {:on-submit on-submit}
+    [capture-input {:value value :on-change on-change}]
+    [:button {:type "submit"} "Submit"]
+    [:div result]
+    (if loading? [:div "Loading..."])]])
+
 (defn capture-form [{:keys [post! c-done]}]
-  (let [state (r/atom {:value nil :loading false :result nil})
-        set-loading! #(swap! state assoc :loading true :result nil)
-        set-result! #(swap! state assoc :loading false :result %)
+  (let [state (r/atom {:value nil :loading? false :result nil})
         extract-result
         (fn [{:keys [id reference error]}]
           (if error "Error!" (str "Created with id " id " and ref " reference)))
         handle-submit
         (fn [e]
           (.preventDefault e)
-          (set-loading!)
+          (swap! state assoc :loading? true :result nil)
           (go (let [resp (-> @state :value post! <!)]
-                (set-result! (extract-result resp))
+                (swap! state assoc :loading? false :result (extract-result resp))
                 (and c-done (>! c-done 1)))))]
-    (fn []
-      [:div
-       [:h3 "Capture Form"]
-       [:form
-        {:on-submit handle-submit}
-        [capture-input {:value (:value @state)
-                        :on-change #(swap! state assoc :value %)}]
-        [:button {:type "submit"} "Submit"]
-        [:div (:result @state)]
-        (if (:loading state) [:div "Loading..."])]])))
+    (fn [] (-> @state
+               (assoc :on-submit handle-submit
+                      :on-change #(swap! state assoc :value %))
+               capture-form-inner))))
 
-(defn captured-refs-table [{:keys [get! c-done]}]
-  (let [state (r/atom {:loading true :refs nil})
-        headers ["id" "ref" "created at" "classified?"]
+(defn captured-refs-table-inner [{:keys [loading? refs fn-refresh!]}]
+  (let [headers ["id" "ref" "created at" "classified?"]
         ref->tr
         (fn [{:keys [id reference created-at classified]}]
           [:tr {:key id}
            [:td id]
            [:td reference]
            [:td created-at]
-           [:td (str classified)]])
+           [:td (str classified)]])]
+    [:div
+     [:h3 "Captured References Table"]
+     [:button {:on-click fn-refresh!} "Update"]
+     (if loading?
+       [:div "LOADING..."]
+       [:table
+        [:thead [:tr (map (fn [x] [:th {:key x} x]) headers)]]
+        [:tbody (->> refs (sort-by :created-at) reverse (map ref->tr))]])]))
+
+(defn captured-refs-table [{:keys [get! c-done]}]
+  (let [state (r/atom {:loading? true :refs nil})
         run-get!
         (fn []
-          (swap! state assoc :loading true :refs nil)
-          (go (swap! state assoc :loading false :refs (<! (get!)))
+          (swap! state assoc :loading? true :refs nil)
+          (go (swap! state assoc :loading? false :refs (<! (get!)))
               (and c-done (>! c-done 1))))]
     (run-get!)
-    (fn []
-      [:div
-       [:h3 "Captured References Table"]
-       [:button {:on-click run-get!} "Update"]
-       (if (:loading @state)
-         [:div "LOADING..."]
-         [:table
-          [:thead [:tr (map (fn [x] [:th {:key x} x]) headers)]]
-          [:tbody (->> @state :refs (sort-by :created-at) reverse (map ref->tr))]])])))
+    #(captured-refs-table-inner (assoc @state :fn-refresh! run-get!))))
 
 (defn items-page []
   (fn []
