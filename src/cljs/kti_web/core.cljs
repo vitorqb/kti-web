@@ -6,13 +6,20 @@
    [clerk.core :as clerk]
    [accountant.core :as accountant]
    [cljs.core.async :refer [chan go take! put! <! >!]]
-   [cljs-http.client :as http]))
+   [cljs-http.client :as http]
+   [kti-web.local-storage :as local-storage]))
 
 ;; !!!! TODO -> Manage host
 (def host "http://localhost:3333")
 (def api-url #(str host "/api/" %))
 
-(declare capture-form captured-refs-table delete-captured-ref-form)
+(declare capture-form captured-refs-table delete-captured-ref-form token-input-inner)
+
+;; -------------------------
+;; State
+(def token (r/atom nil))
+(add-watch token :save-token
+           (fn [_ _ _ new] (local-storage/set-item! "TOKEN" new)))
 
 ;; -------------------------
 ;; Routes
@@ -36,6 +43,8 @@
 (defn run-req! [{:keys [http-fn url json-params]}]
   (let [out-chan (chan)
         req-chan (http-fn url (merge {:with-credentials? false}
+                                     {:headers
+                                      {"authorization" (str "TOKEN " @token)}}
                                      (and json-params {:json-params json-params})))]
     (go (let [{:keys [success body]} (<! req-chan)]
           (>! out-chan (if success body {:error true}))))
@@ -61,12 +70,21 @@
 ;; Page components
 
 (defn home-page []
+  (reset! token (local-storage/get-item "TOKEN"))
   (fn []
     [:span.main
      [:h1 "Welcome to kti-web"]
+     [token-input-inner {:value @token :on-change #(reset! token %)}]
      [capture-form {:post! post-captured-reference!}]
      [delete-captured-ref-form {:delete! delete-captured-reference!}]
      [captured-refs-table {:get! get-captured-references!}]]))
+
+(defn token-input-inner [{:keys [value on-change]}]
+  [:div
+   [:span "Token"]
+   [:input {:value value
+            :on-change #(-> % .-target .-value on-change)
+            :type "password"}]])
 
 (defn capture-input [{:keys [on-change value]}]
   [:div

@@ -39,6 +39,18 @@
     (fn [c div]
       (is (found-in #"Welcome to" div)))))
 
+(deftest test-token-input
+  (let [on-change-args (atom [])
+        on-change (fn [& args] (swap! on-change-args conj args))
+        comp (rc/token-input-inner {:on-change on-change :value "foo"})]
+    (testing "Mounts input"
+      (let [input (get comp 2)]
+        (is (= (first input) :input)
+            (= (get-in input [1 :value]) "foo"))))
+    (testing "Calls onChange on change"
+      ((get-in comp [2 1 :on-change]) (clj->js {:target {:value "BAR"}}))
+      (is (= @on-change-args [["BAR"]])))))
+
 (deftest test-capture-input
   (testing "Calls callback on change"
     (let [callback-args (atom nil)
@@ -139,7 +151,9 @@
          :url "www.google.com"
          :json-params {:a 1}}
         chan (rc/run-req! args)]
-    (is (= @http-fn-args [[url (assoc {:with-credentials? false}
+    (is (= @http-fn-args [[url (assoc {:with-credentials? false
+                                       :headers
+                                       {"authorization" (str "TOKEN " @rc/token)}}
                                       :json-params json-params)]]))
     (async done
            (go (>! http-fn-chan {:success true :body 1})
@@ -153,7 +167,9 @@
                   (swap! http-fn-args conj [x y])
                   http-fn-chan)
         res-chan (rc/run-req! {:http-fn http-fn :url 1})]
-    (is (= @http-fn-args [[1 {:with-credentials? false}]]))
+    (is (= @http-fn-args [[1 {:with-credentials? false
+                              :headers
+                              {"authorization" (str "TOKEN " @rc/token)}}]]))
     (async done
            (go (>! http-fn-chan {:success false})
                (is (= {:error true} (<! res-chan)))
