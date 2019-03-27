@@ -39,6 +39,16 @@
     (fn [c div]
       (is (found-in #"Welcome to" div)))))
 
+(deftest test-host-input
+  (let [on-change-args (atom [])
+        on-change (fn [& a] (swap! on-change-args conj a))
+        comp (rc/host-input-inner {:on-change on-change :value "bar"})]
+    (testing "Inits with value"
+      (is (= (get-in comp [2 1 :value] "bar"))))
+    (testing "Calls onChange at input change"
+      ((get-in comp [2 1 :on-change]) (clj->js {:target {:value "foo"}}))
+      (is (= @on-change-args [["foo"]])))))
+
 (deftest test-token-input
   (let [on-change-args (atom [])
         on-change (fn [& args] (swap! on-change-args conj args))

@@ -9,17 +9,19 @@
    [cljs-http.client :as http]
    [kti-web.local-storage :as local-storage]))
 
-;; !!!! TODO -> Manage host
-(def host "http://localhost:3333")
-(def api-url #(str host "/api/" %))
-
-(declare capture-form captured-refs-table delete-captured-ref-form token-input-inner)
+(declare capture-form captured-refs-table delete-captured-ref-form token-input-inner
+         host-input-inner)
 
 ;; -------------------------
-;; State
+;; State & Globals
 (def token (r/atom nil))
-(add-watch token :save-token
-           (fn [_ _ _ new] (local-storage/set-item! "TOKEN" new)))
+(add-watch token :save-token (fn [_ _ _ new] (local-storage/set-item! "TOKEN" new)))
+(def host (r/atom "http://localhost:3333"))
+(add-watch host :save-host (fn [_ _ _ new] (local-storage/set-item! "HOST" new)))
+(defn api-url [x] (str @host "/api/" x))
+(defn init-state []
+  (some->> (local-storage/get-item "TOKEN") (reset! token))
+  (some->> (local-storage/get-item "HOST") (reset! host)))
 
 ;; -------------------------
 ;; Routes
@@ -70,14 +72,22 @@
 ;; Page components
 
 (defn home-page []
-  (reset! token (local-storage/get-item "TOKEN"))
   (fn []
     [:span.main
      [:h1 "Welcome to kti-web"]
-     [token-input-inner {:value @token :on-change #(reset! token %)}]
+     [:div
+      [:h3 "Options"]
+      [host-input-inner {:value @host :on-change #(reset! host %)}]
+      [token-input-inner {:value @token :on-change #(reset! token %)}]]
      [capture-form {:post! post-captured-reference!}]
      [delete-captured-ref-form {:delete! delete-captured-reference!}]
      [captured-refs-table {:get! get-captured-references!}]]))
+
+(defn host-input-inner [{:keys [value on-change]}]
+  [:div
+   [:span "Host"]
+   [:input {:value value
+            :on-change #(-> % .-target .-value on-change)}]])
 
 (defn token-input-inner [{:keys [value on-change]}]
   [:div
@@ -226,6 +236,7 @@
 ;; Initialize app
 
 (defn mount-root []
+  (init-state)
   (r/render [current-page] (.getElementById js/document "app")))
 
 (defn ^:after-load re-render [] (mount-root))
