@@ -1,0 +1,6 @@
+dist: xenial
+language: clojure
+services: 
+  - xvfb
+install: npm install -g karma karma-firefox-launcher karma-cljs-test
+script: lein doo firefox once
