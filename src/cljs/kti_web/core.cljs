@@ -69,6 +69,10 @@
     :url (api-url (str "captured-references/" id))}))
 
 ;; -------------------------
+;; Utils
+(defn call-with-val [f] #(-> % .-target .-value f))
+
+;; -------------------------
 ;; Page components
 
 (defn home-page []
@@ -76,33 +80,31 @@
     [:span.main
      [:h1 "Welcome to kti-web"]
      [:div
-      [:h3 "Options"]
+      [:h2 "Options"]
       [host-input-inner {:value @host :on-change #(reset! host %)}]
       [token-input-inner {:value @token :on-change #(reset! token %)}]]
-     [capture-form {:post! post-captured-reference!}]
-     [delete-captured-ref-form {:delete! delete-captured-reference!}]
-     [captured-refs-table {:get! get-captured-references!}]]))
+     [:div
+      [:h2 "Captured References"]
+      [capture-form {:post! post-captured-reference!}]
+      [delete-captured-ref-form {:delete! delete-captured-reference!}]
+      [captured-refs-table {:get! get-captured-references!}]]]))
 
 (defn host-input-inner [{:keys [value on-change]}]
   [:div
    [:span "Host"]
-   [:input {:value value
-            :on-change #(-> % .-target .-value on-change)}]])
+   [:input {:value value :on-change (call-with-val on-change)}]])
 
 (defn token-input-inner [{:keys [value on-change]}]
   [:div
    [:span "Token"]
-   [:input {:value value
-            :on-change #(-> % .-target .-value on-change)
-            :type "password"}]])
+   [:input {:value value :on-change (call-with-val on-change) :type "password"}]])
 
 (defn capture-input [{:keys [on-change value]}]
   [:div
    [:span "Capture: "]
-   [:input {:type "text"
-            :style {:width "60%" :min-width "10cm"}
-            :on-change #(-> % .-target .-value on-change)
-            :value value}]
+   [:input {:type "text" :value value
+            :on-change (call-with-val on-change)
+            :style {:width "60%" :min-width "10cm"}}]
    [:div [:i "(current value: " value ")"]]])
 
 (defn capture-form-inner [{:keys [loading? value result on-submit on-change]}]
@@ -162,8 +164,7 @@
 
 (defn delete-captured-ref-form-inner
   [{:keys [ref-id result update-ref-id! delete!]}]
-  (let [handle-change #(-> % .-target .-value update-ref-id!)
-        handle-submit
+  (let [handle-submit
         (fn [e]
           (.preventDefault e)
           (delete! ref-id))]
@@ -171,7 +172,8 @@
      [:form {:on-submit handle-submit}
       [:h3 "Delete Captured Ref. Form"]
       [:span "Ref Id: "]
-      [:input {:type "number" :value ref-id :on-change handle-change}]
+      [:input {:type "number" :value ref-id
+               :on-change (call-with-val update-ref-id!)}]
       [:div [:i (str "(current value: " ref-id ")")]]
       [:div [:button {:type "submit"} "Delete"]]
       (when result [:div (str "Result: " result)])]]))

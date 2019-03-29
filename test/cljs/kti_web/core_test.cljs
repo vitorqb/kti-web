@@ -34,14 +34,20 @@
       (do (println "Not found: " res)
           false))))
 
+(defn args-saver []
+  "Returns an array atom and a function that conj's into the atom
+   value all arguments it receives."
+  (let [args-atom (atom [])
+        save-args (fn [& args] (swap! args-atom conj (into [] args)))]
+    [args-atom save-args]))
+
 (deftest test-home
   (with-mounted-component (rc/home-page)
     (fn [c div]
       (is (found-in #"Welcome to" div)))))
 
 (deftest test-host-input
-  (let [on-change-args (atom [])
-        on-change (fn [& a] (swap! on-change-args conj a))
+  (let [[on-change-args on-change] (args-saver)
         comp (rc/host-input-inner {:on-change on-change :value "bar"})]
     (testing "Inits with value"
       (is (= (get-in comp [2 1 :value] "bar"))))
@@ -50,8 +56,7 @@
       (is (= @on-change-args [["foo"]])))))
 
 (deftest test-token-input
-  (let [on-change-args (atom [])
-        on-change (fn [& args] (swap! on-change-args conj args))
+  (let [[on-change-args on-change] (args-saver)
         comp (rc/token-input-inner {:on-change on-change :value "foo"})]
     (testing "Mounts input"
       (let [input (get comp 2)]
@@ -63,12 +68,11 @@
 
 (deftest test-capture-input
   (testing "Calls callback on change"
-    (let [callback-args (atom nil)
-          callback      (fn [arg] (reset! callback-args arg))
+    (let [[callback-args callback] (args-saver)
           comp          (rc/capture-input {:on-change callback :value ""})
           on-change     (get-in comp [2 1 :on-change])]
       (on-change (clj->js (assoc-in {} [:target :value] "new-input")))
-      (is (= @callback-args "new-input"))))
+      (is (= @callback-args [["new-input"]]))))
 
   (testing "Sets value from prop"
     (let [comp    (rc/capture-input {:on-change (constantly nil) :value "hola"})]
@@ -132,10 +136,8 @@
                (-> comp get-input-div (get 1) (select-keys [:type :value]))))
         (is (= [:div [:i "(current value: 2)"]] (get-in comp [1 5])))
         (is (= [:div "Result: foo"] (get-result-div comp)))))
-    (let [update-ref-id-args (atom [])
-          delete-args (atom [])
-          update-ref-id! #(swap! update-ref-id-args conj %)
-          delete! #(swap! delete-args conj %)
+    (let [[update-ref-id-args update-ref-id!] (args-saver)
+          [delete-args delete!] (args-saver)
           comp (rc/delete-captured-ref-form-inner
                 {:ref-id 3 :result nil
                  :update-ref-id! update-ref-id!
@@ -145,19 +147,17 @@
       (testing "Calls update-ref-id! on input value change"
         (is (= [] @update-ref-id-args))
         ((get-in comp [1 4 1 :on-change]) (clj->js {:target {:value "foo"}}))
-        (is (= ["foo"] @update-ref-id-args)))
+        (is (= [["foo"]] @update-ref-id-args)))
       (testing "Calls delete! on submit"
         (is (= [] @delete-args))
         ((get-in comp [1 1 :on-submit]) (clj->js {:preventDefault fn-nothing}))
-        (is (= [3] @delete-args))))))
+        (is (= [[3]] @delete-args))))))
 
 (deftest test-run-req!-base
   (let [http-fn-chan (chan 1)
-        http-fn-args (atom [])
+        [http-fn-args save-http-fn-args] (args-saver)
         {:keys [http-fn url json-params] :as args}
-        {:http-fn (fn [x y]
-                    (swap! http-fn-args conj [x y])
-                    http-fn-chan)
+        {:http-fn (fn [x y] (save-http-fn-args x y) http-fn-chan)
          :url "www.google.com"
          :json-params {:a 1}}
         chan (rc/run-req! args)]
@@ -171,11 +171,9 @@
                (done)))))
 
 (deftest test-run-req!-error
-  (let [http-fn-args (atom [])
-        http-fn-chan (chan 1)
-        http-fn (fn [x y]
-                  (swap! http-fn-args conj [x y])
-                  http-fn-chan)
+  (let [http-fn-chan (chan 1)
+        [http-fn-args save-http-fn-args] (args-saver)
+        http-fn (fn [x y] (save-http-fn-args x y) http-fn-chan)
         res-chan (rc/run-req! {:http-fn http-fn :url 1})]
     (is (= @http-fn-args [[1 {:with-credentials? false
                               :headers
