@@ -19,7 +19,8 @@
                  [venantius/accountant "0.2.4"
                   :exclusions [org.clojure/tools.reader]]
                  [binaryage/oops "0.7.0"]
-                 [cljs-http "0.1.46"]]
+                 [cljs-http "0.1.46"]
+                 [pjstadig/humane-test-output "0.9.0"]]
 
   :plugins [[lein-environ "1.1.0"]
             [lein-cljsbuild "1.1.7"]
@@ -82,7 +83,7 @@
                                   [pjstadig/humane-test-output "0.9.0"]
                                   [com.bhauman/figwheel-main "0.2.1-SNAPSHOT"]]
                    :source-paths ["env/dev/clj" "env/dev/cljs"]
-                   :plugins [[lein-doo "0.1.10"]
+                   :plugins [[lein-doo "0.1.11"]
                              [cider/cider-nrepl "0.21.0"]
                              [org.clojure/tools.namespace "0.3.0-alpha4"
                               :exclusions [org.clojure/tools.reader]]
