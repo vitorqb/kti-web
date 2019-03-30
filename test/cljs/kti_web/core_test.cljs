@@ -4,7 +4,7 @@
    [reagent.core :as reagent :refer [atom]]
    [kti-web.core :as rc]
    [oops.core :as oops]
-   [cljs.core.async :refer [>! <! take! put! go chan]]))
+   [cljs.core.async :refer [>! <! take! put! go chan close!]]))
 
 
 (def isClient (not (nil? (try (.-document js/window)
@@ -46,6 +46,41 @@
     (fn [c div]
       (is (found-in #"Welcome to" div)))))
 
+(deftest test-select-captured-ref
+  (testing "Calls get-captured-ref with chosen id on submit"
+    (let [cap-ref-chan (chan 1)
+          [get-captured-ref-args save-get-arg] (args-saver)
+          get-captured-ref (fn [x] (save-get-arg x) cap-ref-chan)
+          comp (rc/select-captured-ref {:id-value 123
+                                        :get-captured-ref get-captured-ref
+                                        :on-selection (constantly nil)})]
+      (go (>! cap-ref-chan {}))
+      (is (= 123 (get-in comp [1 3 1 :value])))
+      ((get-in comp [1 1 :on-submit]) (clj->js {:preventDefault (fn [] nil)}))
+      (is (= [[123]] @get-captured-ref-args))))
+  (testing "Calls on-id-change on selected id change"
+    (let [[on-id-change-args on-id-change] (args-saver)
+          comp (rc/select-captured-ref {:on-id-change on-id-change})]
+      ((get-in comp [1 3 1 :on-change]) (clj->js {:target {:value 99}}))
+      (is (= [[99]] @on-id-change-args)))))
+
+(deftest test-select-captured-ref--calls-on-selection-when-user-submits
+  (let [[on-selection-args on-selection] (args-saver)
+        cap-ref {:id 321 :reference "bar" :captured-at "foo"}
+        cap-ref-chan (chan 1)
+        get-captured-ref (constantly cap-ref-chan)
+        comp (rc/select-captured-ref {:on-selection on-selection
+                                      :get-captured-ref get-captured-ref})]
+    (async done
+           (go
+             (>! cap-ref-chan cap-ref)
+             (let [out-chan
+                   ((get-in comp [1 1 :on-submit])
+                    (clj->js {:preventDefault (fn [] nil)}))]
+               (<! out-chan)
+               (is (= [[cap-ref]] @on-selection-args))
+               (done))))))
+
 (deftest test-host-input
   (let [[on-change-args on-change] (args-saver)
         comp (rc/host-input-inner {:on-change on-change :value "bar"})]
@@ -80,7 +115,7 @@
 
 (deftest test-capture-form
   (testing "Updates capture-input value on change"
-    (let [comp-1      (rc/capture-form)
+    (let [comp-1      (rc/capture-form {})
           comp        (comp-1)
           on-change   (get-in comp [2 2 1 :on-change])]
       (on-change "new-input")
@@ -102,6 +137,46 @@
                       (is (= (get-in (comp-1) [2 4 1])
                              "Created with id 1 and ref foo"))
                       (done))))))
+
+(deftest test-edit-captured-ref-form
+  (testing "Updates select-captured-ref current id"
+    (let [comp-1 (rc/edit-captured-ref-form)]
+      (is (= nil (get-in (comp-1) [2 1 :id-value :reference])))
+      ((get-in (comp-1) [2 1 :on-id-change]) 921)
+      (is (= 921 (get-in (comp-1) [2 1 :id-value])))))
+  (testing "Don't show captured-ref-form if no cap. ref. selected"
+    (let [cap-ref {:id 3 :reference "foo" :captured-at "bar"}
+          comp-1 (rc/edit-captured-ref-form)]
+      (is (= true (get-in (comp-1) [3 1 :hidden])))
+      ((get-in (comp-1) [2 1 :on-selection]) cap-ref)
+      (is (= false (get-in (comp-1) [3 1 :hidden])))))
+  (testing "Calls put! on submit"
+    (let [[hput!-args save-hput!-args] (args-saver)
+          put-chan (chan 1)
+          hput! (fn [id cap-ref] (save-hput!-args id cap-ref) put-chan)
+          comp-1 (rc/edit-captured-ref-form {:hput! hput!})]
+      (put! put-chan {})
+      ((get-in (comp-1) [2 1 :on-id-change]) 921)
+      ((get-in (comp-1) [2 1 :on-selection]) {:id 921 :reference "foo"})
+      ((get-in (comp-1) [3 3 1 :on-submit]) (clj->js {:preventDefault (fn [] nil)}))
+      (is (= [[921 {:id 921 :reference "foo"}]] @hput!-args)))))
+
+(deftest test-captured-ref-form
+  (testing "Calls on-change if reference changes"
+    (let [[on-change-args on-change] (args-saver)
+          comp (rc/captured-ref-form
+                {:value {:id 99 :reference "foo"} :on-change on-change})]
+      (is (= "foo" (get-in comp [3 2 1 :value])))
+      ((get-in comp [3 2 1 :on-change]) (clj->js {:target {:value "bar"}}))
+      (is (= [[{:id 99 :reference "bar"}]] @on-change-args))))
+  (testing "Id input is disabled"
+    (let [id 141 comp (rc/captured-ref-form {:value {:id id}})]
+      (is (= id (get-in comp [1 2 1 :value])))
+      (is (= true (get-in comp [1 2 1 :disabled])))))
+  (testing "Created at input is disabled"
+    (let [comp (rc/captured-ref-form {:value {:created-at "foo"}})]
+      (is (= "foo" (get-in comp [2 2 1 :value])))
+      (is (= true (get-in comp [2 2 1 :disabled]))))))
 
 (deftest test-captured-refs-table
   (let [c (chan 1)

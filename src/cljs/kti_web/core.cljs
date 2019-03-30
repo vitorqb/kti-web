@@ -10,7 +10,7 @@
    [kti-web.local-storage :as local-storage]))
 
 (declare capture-form captured-refs-table delete-captured-ref-form token-input-inner
-         host-input-inner)
+         host-input-inner edit-captured-ref-form captured-ref-form select-captured-ref)
 
 ;; -------------------------
 ;; State & Globals
@@ -25,7 +25,6 @@
 
 ;; -------------------------
 ;; Routes
-
 (def router
   (reitit/router
    [["/" :index]
@@ -40,6 +39,7 @@
     (:path (reitit/match-by-name router route))))
 
 (path-for :about)
+
 ;; -----------------------------------------------------------------------------
 ;; Ajax
 (defn run-req! [{:keys [http-fn url json-params]}]
@@ -63,6 +63,17 @@
    {:http-fn http/get
     :url (api-url "captured-references")}))
 
+(defn get-captured-reference! [id]
+  (run-req!
+   {:http-fn http/get
+    :url (api-url (str "captured-references/" id))}))
+
+(defn put-captured-reference! [id {:keys [reference]}]
+  (run-req!
+   {:http-fn http/put
+    :url (api-url (str "captured-references/" id))
+    :json-params {:reference reference}}))
+
 (defn delete-captured-reference! [id]
   (run-req!
    {:http-fn http/delete
@@ -71,10 +82,10 @@
 ;; -------------------------
 ;; Utils
 (defn call-with-val [f] #(-> % .-target .-value f))
+(defn call-prevent-default [f] #(do (.preventDefault %) (f %)))
 
 ;; -------------------------
 ;; Page components
-
 (defn home-page []
   (fn []
     [:span.main
@@ -86,8 +97,25 @@
      [:div
       [:h2 "Captured References"]
       [capture-form {:post! post-captured-reference!}]
+      [edit-captured-ref-form {:hput! put-captured-reference!}]
       [delete-captured-ref-form {:delete! delete-captured-reference!}]
       [captured-refs-table {:get! get-captured-references!}]]]))
+
+(defn select-captured-ref
+  [{:keys [get-captured-ref id-value on-id-change on-selection]}]
+  "A form to select a captured reference."
+  (letfn [(handle-submit [e]
+            (let [cap-ref-chan (get-captured-ref id-value) out-chan (chan)]
+              (go (on-selection (<! cap-ref-chan))
+                  (>! out-chan 1))
+              out-chan))]
+    [:div
+     [:form {:on-submit (call-prevent-default handle-submit)}
+      [:span "Choose an id: "]
+      [:input {:value id-value
+               :on-change (call-with-val on-id-change)
+               :type "number"}]
+      [:button {:type "Submit"} "Submit!"]]]))
 
 (defn host-input-inner [{:keys [value on-change]}]
   [:div
@@ -124,15 +152,54 @@
           (if error "Error!" (str "Created with id " id " and ref " reference)))
         handle-submit
         (fn [e]
-          (.preventDefault e)
           (swap! state assoc :loading? true :result nil)
           (go (let [resp (-> @state :value post! <!)]
                 (swap! state assoc :loading? false :result (extract-result resp))
                 (and c-done (>! c-done 1)))))]
     (fn [] (-> @state
-               (assoc :on-submit handle-submit
+               (assoc :on-submit (call-prevent-default handle-submit)
                       :on-change #(swap! state assoc :value %))
                capture-form-inner))))
+
+(defn edit-captured-ref-form [{:keys [hput!]}]
+  "A form to edit a captured reference."
+  (let [selected-id-value (r/atom nil)
+        selected-cap-ref (r/atom nil)
+        editted-cap-ref (r/atom nil)
+        status (r/atom nil)
+        handle-submit
+        (fn []
+          (let [resp-chan (hput! @selected-id-value @editted-cap-ref)]
+            (go (let [{:keys [error]} (<! resp-chan)]
+                  (reset! status (if error "Error!" "Success!"))))))]
+    (fn []
+      [:div
+       [:h3 "Edit Captured Reference Form"]
+       [select-captured-ref
+        {:get-captured-ref get-captured-reference!
+         :on-selection #(do (reset! selected-cap-ref %) (reset! editted-cap-ref %))
+         :id-value @selected-id-value
+         :on-id-change #(reset! selected-id-value %)}]
+       [:div {:hidden (nil? @editted-cap-ref)}
+        [captured-ref-form {:value @editted-cap-ref
+                            :on-change #(reset! editted-cap-ref %)}]
+        [:form {:on-submit (call-prevent-default handle-submit)}
+         [:button {:type "Submit"} "Submit"]]
+        [:div @status]]])))
+
+(defn captured-ref-form [{:keys [value on-change]}]
+  (letfn [(handle-change [k] (fn [x] (on-change (assoc value k x))))]
+    [:div
+     [:div
+      [:span "Id"]
+      [:input {:value (:id value "") :disabled true}]]
+     [:div
+      [:span "Created at"]
+      [:input {:value (:created-at value "") :disabled true}]]
+     [:div 
+      [:span "Reference"]
+      [:input {:value (:reference  value "")
+               :on-change (call-with-val (handle-change :reference))}]]]))
 
 (defn captured-refs-table-inner [{:keys [loading? refs fn-refresh!]}]
   (let [headers ["id" "ref" "created at" "classified?"]
@@ -164,12 +231,9 @@
 
 (defn delete-captured-ref-form-inner
   [{:keys [ref-id result update-ref-id! delete!]}]
-  (let [handle-submit
-        (fn [e]
-          (.preventDefault e)
-          (delete! ref-id))]
+  (let [handle-submit #(delete! ref-id)]
     [:div
-     [:form {:on-submit handle-submit}
+     [:form {:on-submit (call-prevent-default handle-submit)}
       [:h3 "Delete Captured Ref. Form"]
       [:span "Ref Id: "]
       [:input {:type "number" :value ref-id
