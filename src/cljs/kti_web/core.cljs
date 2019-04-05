@@ -6,24 +6,24 @@
    [clerk.core :as clerk]
    [accountant.core :as accountant]
    [cljs.core.async :refer [chan go take! put! <! >!]]
-   [cljs-http.client :as http]
-   [kti-web.local-storage :as local-storage]))
+   [kti-web.local-storage :as local-storage]
+   [kti-web.http :refer [run-req!
+                         post-captured-reference!
+                         get-captured-reference!
+                         get-captured-references!
+                         put-captured-reference!
+                         delete-captured-reference!]]
+   [kti-web.state :refer [token host api-url init-state]]))
 
-(declare capture-form captured-refs-table delete-captured-ref-form token-input-inner
-         host-input-inner edit-captured-ref-comp captured-ref-inputs select-captured-ref)
+(declare
+ capture-form
+ captured-refs-table
+ delete-captured-ref-form
+ token-input-inner
+ host-input-inner
+ edit-captured-ref-comp
+ captured-ref-inputs)
 
-;; -------------------------
-;; State & Globals
-(def token (r/atom nil))
-(add-watch token :save-token (fn [_ _ _ new] (local-storage/set-item! "TOKEN" new)))
-(def host (r/atom "http://localhost:3333"))
-(add-watch host :save-host (fn [_ _ _ new] (local-storage/set-item! "HOST" new)))
-(defn api-url [x] (str @host "/api/" x))
-(defn init-state []
-  (some->> (local-storage/get-item "TOKEN") (reset! token))
-  (some->> (local-storage/get-item "HOST") (reset! host)))
-
-;; -------------------------
 ;; Helpers
 (defn submit-button
   ([] (submit-button {:text "Submit!"}))
@@ -45,45 +45,6 @@
     (:path (reitit/match-by-name router route))))
 
 (path-for :about)
-
-;; -----------------------------------------------------------------------------
-;; Ajax
-(defn run-req! [{:keys [http-fn url json-params]}]
-  (let [out-chan (chan)
-        req-chan (http-fn url (merge {:with-credentials? false}
-                                     {:headers
-                                      {"authorization" (str "TOKEN " @token)}}
-                                     (and json-params {:json-params json-params})))]
-    (go (let [{:keys [success body]} (<! req-chan)]
-          (>! out-chan (if success body {:error true}))))
-    out-chan))
-
-(defn post-captured-reference! [ref]
-  (run-req!
-   {:http-fn http/post
-    :url (api-url "captured-references")
-    :json-params {:reference ref}}))
-
-(defn get-captured-references! []
-  (run-req!
-   {:http-fn http/get
-    :url (api-url "captured-references")}))
-
-(defn get-captured-reference! [id]
-  (run-req!
-   {:http-fn http/get
-    :url (api-url (str "captured-references/" id))}))
-
-(defn put-captured-reference! [id {:keys [reference]}]
-  (run-req!
-   {:http-fn http/put
-    :url (api-url (str "captured-references/" id))
-    :json-params {:reference reference}}))
-
-(defn delete-captured-reference! [id]
-  (run-req!
-   {:http-fn http/delete
-    :url (api-url (str "captured-references/" id))}))
 
 ;; -------------------------
 ;; Utils
