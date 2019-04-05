@@ -24,6 +24,12 @@
   (some->> (local-storage/get-item "HOST") (reset! host)))
 
 ;; -------------------------
+;; Helpers
+(defn submit-button
+  ([] (submit-button {:text "Submit!"}))
+  ([{:keys [text]}] [:button {:type "Submit"} text]))
+
+;; -------------------------
 ;; Routes
 (def router
   (reitit/router
@@ -115,7 +121,7 @@
       [:input {:value id-value
                :on-change (call-with-val on-id-change)
                :type "number"}]
-      [:button {:type "Submit"} "Submit!"]]]))
+      [submit-button]]]))
 
 (defn host-input-inner [{:keys [value on-change]}]
   [:div
@@ -141,7 +147,7 @@
    [:form
     {:on-submit on-submit}
     [capture-input {:value value :on-change on-change}]
-    [:button {:type "submit"} "Capture"]
+    [submit-button {:text "Capture!"}]
     [:div result]
     (if loading? [:div "Loading..."])]])
 
@@ -194,7 +200,7 @@
    [:form {:on-submit (call-prevent-default on-submit)}
     [captured-ref-inputs {:value editted-cap-ref
                           :on-change on-editted-cap-ref-change}]
-    [:button {:type "Submit"} "Submit"]]
+    [submit-button]]
    [:div status]])
 
 (defn captured-ref-inputs [{:keys [value on-change]}]
@@ -249,7 +255,7 @@
       [:input {:type "number" :value ref-id
                :on-change (call-with-val update-ref-id!)}]
       [:div [:i (str "(current value: " ref-id ")")]]
-      [:div [:button {:type "submit"} "Delete"]]
+      [:div [submit-button {:text "Delete!"}]]
       (when result [:div (str "Result: " result)])]]))
 
 (defn delete-captured-ref-form [{:keys [delete! c-done]}]
