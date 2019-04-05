@@ -3,7 +3,7 @@
    [cljs.test :refer-macros [is are deftest testing use-fixtures async]]
    [reagent.core :as reagent :refer [atom]]
    [kti-web.core :as rc]
-   [oops.core :as oops]
+   [kti-web.test-utils :as utils :refer [args-saver]]
    [cljs.core.async :refer [>! <! take! put! go chan close!]]))
 
 
@@ -33,13 +33,6 @@
       true
       (do (println "Not found: " res)
           false))))
-
-(defn args-saver []
-  "Returns an array atom and a function that conj's into the atom
-   value all arguments it receives."
-  (let [args-atom (atom [])
-        save-args (fn [& args] (swap! args-atom conj (into [] args)))]
-    [args-atom save-args]))
 
 (defn prevent-default-event
   ([] (prevent-default-event (constantly nil)))
@@ -263,33 +256,3 @@
         (is (= [] @delete-args))
         ((get-in comp [1 1 :on-submit]) (prevent-default-event))
         (is (= [[3]] @delete-args))))))
-
-(deftest test-run-req!-base
-  (let [http-fn-chan (chan 1)
-        [http-fn-args save-http-fn-args] (args-saver)
-        {:keys [http-fn url json-params] :as args}
-        {:http-fn (fn [x y] (save-http-fn-args x y) http-fn-chan)
-         :url "www.google.com"
-         :json-params {:a 1}}
-        chan (rc/run-req! args)]
-    (is (= @http-fn-args [[url (assoc {:with-credentials? false
-                                       :headers
-                                       {"authorization" (str "TOKEN " @rc/token)}}
-                                      :json-params json-params)]]))
-    (async done
-           (go (>! http-fn-chan {:success true :body 1})
-               (is (= 1 (<! chan)))
-               (done)))))
-
-(deftest test-run-req!-error
-  (let [http-fn-chan (chan 1)
-        [http-fn-args save-http-fn-args] (args-saver)
-        http-fn (fn [x y] (save-http-fn-args x y) http-fn-chan)
-        res-chan (rc/run-req! {:http-fn http-fn :url 1})]
-    (is (= @http-fn-args [[1 {:with-credentials? false
-                              :headers
-                              {"authorization" (str "TOKEN " @rc/token)}}]]))
-    (async done
-           (go (>! http-fn-chan {:success false})
-               (is (= {:error true} (<! res-chan)))
-               (done)))))
