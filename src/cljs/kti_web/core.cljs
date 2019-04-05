@@ -10,7 +10,7 @@
    [kti-web.local-storage :as local-storage]))
 
 (declare capture-form captured-refs-table delete-captured-ref-form token-input-inner
-         host-input-inner edit-captured-ref-form captured-ref-form select-captured-ref)
+         host-input-inner edit-captured-ref-comp captured-ref-inputs select-captured-ref)
 
 ;; -------------------------
 ;; State & Globals
@@ -97,7 +97,7 @@
      [:div
       [:h2 "Captured References"]
       [capture-form {:post! post-captured-reference!}]
-      [edit-captured-ref-form {:hput! put-captured-reference!}]
+      [edit-captured-ref-comp {:hput! put-captured-reference!}]
       [delete-captured-ref-form {:delete! delete-captured-reference!}]
       [captured-refs-table {:get! get-captured-references!}]]]))
 
@@ -161,7 +161,9 @@
                       :on-change #(swap! state assoc :value %))
                capture-form-inner))))
 
-(defn edit-captured-ref-form [{:keys [hput!]}]
+(declare edit-captured-ref-comp--form)
+
+(defn edit-captured-ref-comp [{:keys [hput!]}]
   "A form to edit a captured reference."
   (let [selected-id-value (r/atom nil)
         selected-cap-ref (r/atom nil)
@@ -180,14 +182,22 @@
          :on-selection #(do (reset! selected-cap-ref %) (reset! editted-cap-ref %))
          :id-value @selected-id-value
          :on-id-change #(reset! selected-id-value %)}]
-       [:div {:hidden (nil? @editted-cap-ref)}
-        [captured-ref-form {:value @editted-cap-ref
-                            :on-change #(reset! editted-cap-ref %)}]
-        [:form {:on-submit (call-prevent-default handle-submit)}
-         [:button {:type "Submit"} "Submit"]]
-        [:div @status]]])))
+       [edit-captured-ref-comp--form
+        {:editted-cap-ref @editted-cap-ref
+         :on-editted-cap-ref-change #(reset! editted-cap-ref %)
+         :on-submit (call-prevent-default handle-submit)
+         :status @status}]])))
 
-(defn captured-ref-form [{:keys [value on-change]}]
+(defn edit-captured-ref-comp--form
+  [{:keys [editted-cap-ref on-editted-cap-ref-change on-submit status]}]
+  [:div {:hidden (nil? editted-cap-ref)}
+   [:form {:on-submit (call-prevent-default on-submit)}
+    [captured-ref-inputs {:value editted-cap-ref
+                          :on-change on-editted-cap-ref-change}]
+    [:button {:type "Submit"} "Submit"]]
+   [:div status]])
+
+(defn captured-ref-inputs [{:keys [value on-change]}]
   (letfn [(handle-change [k] (fn [x] (on-change (assoc value k x))))]
     [:div
      [:div
