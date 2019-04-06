@@ -8,3 +8,7 @@
         save-args (fn [& args] (swap! args-atom conj (into [] args)))]
     [args-atom save-args]))
 
+(defn prevent-default-event
+  ([] (prevent-default-event (constantly nil)))
+  ([f] (clj->js {:preventDefault f})))
+
