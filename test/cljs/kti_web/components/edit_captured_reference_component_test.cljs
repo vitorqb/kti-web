@@ -6,22 +6,54 @@
    [kti-web.components.edit-captured-reference-component :as rc]
    [kti-web.test-utils :as utils]))
 
-(deftest test-captured-ref-form
-  (testing "Calls on-change if reference changes"
-    (let [[on-change-args on-change] (utils/args-saver)
-          comp (rc/captured-ref-inputs
-                {:value {:id 99 :reference "foo"} :on-change on-change})]
-      (is (= "foo" (get-in comp [3 2 1 :value])))
-      ((get-in comp [3 2 1 :on-change]) (clj->js {:target {:value "bar"}}))
-      (is (= [[{:id 99 :reference "bar"}]] @on-change-args))))
-  (testing "Id input is disabled"
-    (let [id 141 comp (rc/captured-ref-inputs {:value {:id id}})]
-      (is (= id (get-in comp [1 2 1 :value])))
-      (is (= true (get-in comp [1 2 1 :disabled])))))
-  (testing "Created at input is disabled"
-    (let [comp (rc/captured-ref-inputs {:value {:created-at "foo"}})]
-      (is (= "foo" (get-in comp [2 2 1 :value])))
-      (is (= true (get-in comp [2 2 1 :disabled]))))))
+(deftest test-captured-ref-inputs--id
+  (let [mount rc/captured-ref-inputs--id
+        get-value #(get-in % [2 1 :value])
+        get-disabled #(get-in % [2 1 :disabled])]
+    (testing "Is disabled"
+      (is (true? (get-disabled (mount)))))
+    (testing "Shows value from id"
+      (is (= (get-value (mount {:id 12})) 12)))))
+
+(deftest test-captured-ref-inputs--created-at
+  (let [mount rc/captured-ref-inputs--created-at
+        get-value #(get-in % [2 1 :value])
+        get-disabled #(get-in % [2 1 :disabled])]
+    (testing "Is disabled"
+      (is (true? (get-disabled (mount)))))
+    (testing "Shows value from created-at"
+      (is (= (get-value (mount {:created-at :bar})) :bar)))))
+
+(deftest test-captured-ref-inputs--reference
+  (let [mount rc/captured-ref-inputs--reference
+        get-value #(get-in % [2 1 :value])
+        get-on-change #(get-in % [2 1 :on-change])]
+    (testing "Shows reference in value"
+      (is (= (get-value (mount {:reference :foo})) :foo)))
+    (testing "Calls on-reference-change"
+      (let [[on-change-args on-change] (utils/args-saver)
+            comp (mount {:on-reference-change on-change})]
+        ((get-on-change comp) (clj->js {:target {:value "foo"}}))
+        (is (= @on-change-args [["foo"]]))))))
+
+(deftest test-captured-ref-inputs
+  (let [mount rc/captured-ref-inputs]
+    (testing "Passes value to reference input"
+      (let [comp (mount {:value {:reference :foo}})]
+        (is (= (get-in comp [3 0]) rc/captured-ref-inputs--reference))
+        (is (= (get-in comp [3 1 :reference]) :foo))))
+    (testing "Calls on-change if reference changes"
+      (let [[on-change-args on-change] (utils/args-saver)
+            value {:id 99 :reference "foo"}
+            comp (mount {:value value :on-change on-change})]
+        ((get-in comp [3 1 :on-reference-change]) "New Ref")
+        (is (= [[{:id 99 :reference "New Ref"}]] @on-change-args))))
+    (testing "Renders id input"
+      (let [value {:foo "bar"} comp (rc/captured-ref-inputs {:value value})]
+        (is (= (get-in comp [1]) [rc/captured-ref-inputs--id value]))))
+    (testing "Renders created-at input"
+      (let [value {:bar :baz} comp (rc/captured-ref-inputs {:value value})]
+        (is (= (get-in comp [2]) [rc/captured-ref-inputs--created-at value]))))))
 
 (deftest test-edit-captured-ref-form
   (let [get-hidden #(get-in % [1 :hidden])
@@ -60,7 +92,7 @@
         ((get-on-id-change (comp-1)) 921)
         (is (= 921 (get-id-val (comp-1))))))
     (testing "Initializes edit-captured-ref-comp--form"
-      (let [cap-ref {:id 1 :reference "bar" :captured-at "baz"}
+      (let [cap-ref {:id 1 :reference "bar" :created-at "baz"}
             comp-1 (rc/edit-captured-ref-comp {})]
         ;; User selects some cap-ref
         ((get-ref-form-on-selection (comp-1)) cap-ref)
