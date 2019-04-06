@@ -29,19 +29,35 @@
     {:reference (:reference value)
      :on-reference-change #(on-change (assoc value :reference %))}]])
 
-(defn edit-captured-ref-comp--form
-  [{:keys [editted-cap-ref on-editted-cap-ref-change on-submit status]}]
-  [:div {:hidden (nil? editted-cap-ref)}
-   [:form {:on-submit (call-prevent-default on-submit)}
-    [captured-ref-inputs {:value editted-cap-ref
-                          :on-change on-editted-cap-ref-change}]
-    [submit-button]]
+(defn edit-captured-ref-form
+  [{:keys [cap-ref on-cap-ref-change on-submit]}]
+  "A form to edit a captured reference"
+  [:form {:on-submit (call-prevent-default #(on-submit))}
+   [captured-ref-inputs {:value cap-ref :on-change on-cap-ref-change}]
+   [submit-button]])
+
+(defn edit-captured-ref-comp--inner
+  [{:keys [get-captured-ref on-cap-ref-selection cap-ref-id-value
+           on-cap-ref-id-change editted-cap-ref on-editted-cap-ref-change
+           on-edit-cap-ref-submit status]}]
+  [:div
+   [:h3 "Edit Captured Reference Form"]
+   [select-captured-ref
+    {:get-captured-ref get-captured-ref
+     :on-selection on-cap-ref-selection
+     :id-value cap-ref-id-value
+     :on-id-change on-cap-ref-id-change}]
+   (when editted-cap-ref
+     [edit-captured-ref-form
+      {:cap-ref editted-cap-ref
+       :on-cap-ref-change on-editted-cap-ref-change
+       :on-submit on-edit-cap-ref-submit}])
    [:div status]])
 
 (defn edit-captured-ref-comp [{:keys [hput!]}]
   "A form to edit a captured reference."
+  ;; !!!! TODO -> Change get-captured-ref for hget!
   (let [selected-id-value (r/atom nil)
-        selected-cap-ref (r/atom nil)
         editted-cap-ref (r/atom nil)
         status (r/atom nil)
         handle-submit
@@ -50,16 +66,12 @@
             (go (let [{:keys [error]} (<! resp-chan)]
                   (reset! status (if error "Error!" "Success!"))))))]
     (fn []
-      [:div
-       [:h3 "Edit Captured Reference Form"]
-       [select-captured-ref
-        ;; !!!! TODO -> Change for hget!
-        {:get-captured-ref http/get-captured-reference!
-         :on-selection #(do (reset! selected-cap-ref %) (reset! editted-cap-ref %))
-         :id-value @selected-id-value
-         :on-id-change #(reset! selected-id-value %)}]
-       [edit-captured-ref-comp--form
-        {:editted-cap-ref @editted-cap-ref
-         :on-editted-cap-ref-change #(reset! editted-cap-ref %)
-         :on-submit (call-prevent-default handle-submit)
-         :status @status}]])))
+      [edit-captured-ref-comp--inner
+       {:get-captured-ref http/get-captured-reference!
+        :on-cap-ref-selection #(reset! editted-cap-ref %)
+        :cap-ref-id-value @selected-id-value
+        :on-cap-ref-id-change #(reset! selected-id-value %)
+        :editted-cap-ref @editted-cap-ref
+        :on-editted-cap-ref-change #(reset! editted-cap-ref %)
+        :on-edit-cap-ref-submit handle-submit
+        :status @status}])))
