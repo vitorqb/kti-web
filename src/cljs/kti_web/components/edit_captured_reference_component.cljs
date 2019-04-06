@@ -7,19 +7,27 @@
    [kti-web.utils :refer [call-prevent-default call-with-val]]
    [kti-web.http :as http]))
 
+(defn captured-ref-inputs--id [{:keys [id]}]
+  [:div [:span "Id"] [:input {:value (or id "") :disabled true}]])
+
+(defn captured-ref-inputs--created-at [{:keys [created-at]}]
+  [:div
+   [:span "Captured at"]
+   [:input {:value (or created-at "") :disabled true}]])
+
+(defn captured-ref-inputs--reference [{:keys [reference on-reference-change]}]
+  [:div 
+   [:span "Reference"]
+   [:input {:value (or reference "")
+            :on-change (call-with-val on-reference-change)}]])
+
 (defn captured-ref-inputs [{:keys [value on-change]}]
-  (letfn [(handle-change [k] (fn [x] (on-change (assoc value k x))))]
-    [:div
-     [:div
-      [:span "Id"]
-      [:input {:value (:id value "") :disabled true}]]
-     [:div
-      [:span "Created at"]
-      [:input {:value (:created-at value "") :disabled true}]]
-     [:div 
-      [:span "Reference"]
-      [:input {:value (:reference  value "")
-               :on-change (call-with-val (handle-change :reference))}]]]))
+  [:div
+   [captured-ref-inputs--id value]
+   [captured-ref-inputs--created-at value]
+   [captured-ref-inputs--reference
+    {:reference (:reference value)
+     :on-reference-change #(on-change (assoc value :reference %))}]])
 
 (defn edit-captured-ref-comp--form
   [{:keys [editted-cap-ref on-editted-cap-ref-change on-submit status]}]
