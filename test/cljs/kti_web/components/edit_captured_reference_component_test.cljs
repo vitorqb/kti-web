@@ -78,12 +78,14 @@
       (let [params {:get-captured-ref :a
                     :on-cap-ref-selection :b
                     :cap-ref-id-value :c
-                    :on-cap-ref-id-change :d}]
+                    :on-cap-ref-id-change :d
+                    :toggle-loading :e}]
         (is (= (get-in (mount params) [2])
                [select-captured-ref {:get-captured-ref :a
                                      :on-selection :b
                                      :id-value :c
-                                     :on-id-change :d}]))))
+                                     :on-id-change :d
+                                     :toggle-loading :e}]))))
     (testing "Initializes edit-captured-ref-form"
       (let [params {:editted-cap-ref :a
                     :on-editted-cap-ref-change :b
@@ -98,7 +100,16 @@
     (testing "Hides edit-captured-ref-form if editted-cap-ref is nil"
       (is (nil? (get-captured-ref-form (mount {}))))
       (is (nil? (get-captured-ref-form (mount {:editted-cap-ref nil}))))
-      (is (not (nil? (get-captured-ref-form (mount {:editted-cap-ref :a}))))))))
+      (is (not (nil? (get-captured-ref-form (mount {:editted-cap-ref :a}))))))
+    (testing "Shows loading if loading?"
+      (is (= (get-in (mount {:loading? true}) [3]) [:span "Loading..."]))
+      (is (= (get-in (mount {:loading? false}) [3]) nil)))
+    (testing "Calls toggle-loading when select-captured-ref calls toggle-loading"
+      (let [[toggle-loading-args toggle-loading] (utils/args-saver)
+            comp (mount {:toggle-loading toggle-loading})]
+        ((get-in comp [2 1 :toggle-loading]) true)
+        ((get-in comp [2 1 :toggle-loading]) false)
+        (is (= @toggle-loading-args [[true] [false]]))))))
 
 (deftest test-edit-captured-ref-comp
   (let [get-inner-prop (fn [c k] (get-in c (conj [1] k)))]
@@ -112,7 +123,9 @@
         (is (nil? (get-inner-prop comp :editted-cap-ref)))
         (is (not (nil? (get-inner-prop comp :on-editted-cap-ref-change))))
         (is (not (nil? (get-inner-prop comp :on-edit-cap-ref-submit))))
-        (is (nil? (get-inner-prop comp :status)))))
+        (is (not (nil? (get-inner-prop comp :toggle-loading))))
+        (is (nil? (get-inner-prop comp :status)))
+        (is (false? (get-inner-prop comp :loading?)))))
     (testing "Updates cap-ref-id-value on cap-ref-id-change"
       (let [comp-1 (rc/edit-captured-ref-comp {})]
         (is (nil? (get-inner-prop (comp-1) :cap-ref-id-value)))
@@ -127,7 +140,13 @@
       (let [comp-1 (rc/edit-captured-ref-comp {})]
         (is (nil? (get-inner-prop (comp-1) :editted-cap-ref)))
         ((get-inner-prop (comp-1) :on-cap-ref-selection) :foo)
-        (is (= (get-inner-prop (comp-1) :editted-cap-ref) :foo))))))
+        (is (= (get-inner-prop (comp-1) :editted-cap-ref) :foo))))
+    (testing "Sets loading by toggle-loading"
+      (let [comp-1 (rc/edit-captured-ref-comp {})]
+        ((get-inner-prop (comp-1) :toggle-loading) true)
+        (is (true? (get-inner-prop (comp-1) :loading?)))
+        ((get-inner-prop (comp-1) :toggle-loading) false)
+        (is (false? (get-inner-prop (comp-1) :loading?)))))))
 
 (deftest test-edit-captured-ref-comp--calls-hput-on-submit
   (let [[hput!-args update-hput!-args] (utils/args-saver)
@@ -149,9 +168,10 @@
     ;; hput! was called with the id and the new cap ref
     (is (= @hput!-args [[(:id cap-ref) new-cap-ref]]))
     ;; hput! writes something into the channel and the status is Success!
-    (async done (go (>! hput!-chan 1)
-                    (js/setTimeout
-                     (fn []
-                       (is (= (get-in (comp-1) [1 :status]) "Success!"))
-                       (done))
-                     100)))))
+    (async done
+           (go (>! hput!-chan 1)
+               (js/setTimeout
+                (fn []
+                  (is (= (get-in (comp-1) [1 :status]) "Success!"))
+                  (done))
+                100)))))

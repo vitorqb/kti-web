@@ -38,3 +38,26 @@
                (<! out-chan)
                (is (= [[cap-ref]] @on-selection-args))
                (done))))))
+
+(deftest test-select-captured-ref--calls-toggle-loading-during-submit
+  (let [[toggle-loading-args toggle-loading] (utils/args-saver)
+        get-cap-ref-chan (chan)
+        get-cap-ref (constantly get-cap-ref-chan)
+        comp (rc/select-captured-ref
+              {:toggle-loading toggle-loading
+               :on-selection (constantly nil)
+               :get-captured-ref (constantly get-cap-ref-chan)})
+        on-submit (get-in comp [1 1 :on-submit])]
+    (async done
+           (go
+             ;; User submits
+             (let [out-chan (on-submit (utils/prevent-default-event))]
+               ;; And toggle-loading is called with true
+               (is (= @toggle-loading-args [[true]]))
+               ;; The response comes from the server
+               (>! get-cap-ref-chan {})
+               ;; The processing for the component ends
+               (is (= (<! out-chan) 1))
+               ;; And toggle-loading has been called again with false
+               (is (= @toggle-loading-args [[true] [false]]))
+               (done))))))

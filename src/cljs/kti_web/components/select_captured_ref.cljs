@@ -5,11 +5,14 @@
    [kti-web.components.utils :refer [submit-button]]))
 
 (defn select-captured-ref
-  [{:keys [get-captured-ref id-value on-id-change on-selection]}]
+  [{:keys [get-captured-ref id-value on-id-change on-selection toggle-loading]
+    :or {toggle-loading (constantly nil)}}]
   "A form to select a captured reference."
   (letfn [(handle-submit [e]
+            (toggle-loading true)
             (let [cap-ref-chan (get-captured-ref id-value) out-chan (chan)]
               (go (on-selection (<! cap-ref-chan))
+                  (toggle-loading false)
                   (>! out-chan 1))
               out-chan))]
     [:div
