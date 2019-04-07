@@ -16,6 +16,10 @@
    [kti-web.state :refer [token host api-url init-state]]
    [kti-web.components.edit-captured-reference-component
     :refer [edit-captured-ref-comp]]
+   [kti-web.components.article-creator :refer [article-creator]]
+   [kti-web.components.article-editor :refer [article-editor]]
+   [kti-web.components.article-deletor :refer [article-deletor]]
+   [kti-web.components.article-table :refer [article-table]]
    [kti-web.components.utils :refer [submit-button]]
    [kti-web.utils :refer [call-with-val call-prevent-default]]))
 
@@ -59,7 +63,13 @@
       [edit-captured-ref-comp {:hput! put-captured-reference!
                                :hget! get-captured-reference!}]
       [delete-captured-ref-form {:delete! delete-captured-reference!}]
-      [captured-refs-table {:get! get-captured-references!}]]]))
+      [captured-refs-table {:get! get-captured-references!}]]
+     [:div
+      [:h2 "Articles!"]
+      [article-creator {}]
+      [article-editor {}]
+      [article-deletor {}]
+      [article-table {}]]]))
 
 (defn host-input-inner [{:keys [value on-change]}]
   [:div
