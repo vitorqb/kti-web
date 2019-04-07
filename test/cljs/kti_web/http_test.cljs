@@ -27,12 +27,18 @@
 (deftest test-run-req!-error
   (let [http-fn-chan (chan 1)
         [http-fn-args save-http-fn-args] (utils/args-saver)
-        http-fn (fn [x y] (save-http-fn-args x y) http-fn-chan)
-        res-chan (rc/run-req! {:http-fn http-fn :url 1})]
-    (is (= @http-fn-args [[1 {:with-credentials? false
-                              :headers
-                              {"authorization" (str "TOKEN " @state/token)}}]]))
-    (async done
-           (go (>! http-fn-chan {:success false})
-               (is (= {:error true} (<! res-chan)))
-               (done)))))
+        http-fn (fn [x y] (save-http-fn-args x y) http-fn-chan)]
+    ;; Runs the request and stores the channel
+    (let [res-chan (rc/run-req! {:http-fn http-fn :url 1})]
+      ;; http-fn should have been called with those args
+      (is (= @http-fn-args
+             [[1 {:with-credentials? false
+                  :headers {"authorization" (str "TOKEN " @state/token)}}]]))
+      (let [response {:success false :status 404}]
+        (async done
+               (go
+                 ;; Simulates the errored http response
+                 (>! http-fn-chan response)
+                 ;; And ensures that the error is written on the response channel
+                 (is (= {:error true :response response} (<! res-chan)))
+                 (done)))))))
