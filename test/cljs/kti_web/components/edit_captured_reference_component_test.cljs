@@ -114,9 +114,9 @@
 (deftest test-edit-captured-ref-comp
   (let [get-inner-prop (fn [c k] (get-in c (conj [1] k)))]
     (testing "Mounts edit-captured-ref-comp--inner"
-      (let [comp ((rc/edit-captured-ref-comp {}))]
+      (let [comp ((rc/edit-captured-ref-comp {:hget! :a}))]
         (is (= (get-in comp [0]) rc/edit-captured-ref-comp--inner))
-        (is (not (nil? (get-inner-prop comp :get-captured-ref))))
+        (is (= (get-inner-prop comp :get-captured-ref) :a))
         (is (not (nil? (get-inner-prop comp :on-cap-ref-selection))))
         (is (nil? (get-inner-prop comp :cap-ref-id-value)))
         (is (not (nil? (get-inner-prop comp :on-cap-ref-id-change))))

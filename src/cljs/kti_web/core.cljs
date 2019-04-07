@@ -56,7 +56,8 @@
      [:div
       [:h2 "Captured References"]
       [capture-form {:post! post-captured-reference!}]
-      [edit-captured-ref-comp {:hput! put-captured-reference!}]
+      [edit-captured-ref-comp {:hput! put-captured-reference!
+                               :hget! get-captured-reference!}]
       [delete-captured-ref-form {:delete! delete-captured-reference!}]
       [captured-refs-table {:get! get-captured-references!}]]]))
 
