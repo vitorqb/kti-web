@@ -109,7 +109,10 @@
             comp (mount {:toggle-loading toggle-loading})]
         ((get-in comp [2 1 :toggle-loading]) true)
         ((get-in comp [2 1 :toggle-loading]) false)
-        (is (= @toggle-loading-args [[true] [false]]))))))
+        (is (= @toggle-loading-args [[true] [false]]))))
+    (testing "Shows error msg if cap-ref-selection-error is set"
+      (is (= (get-in (mount {:cap-ref-selection-error "foo"}) [3])
+             [:span "ERROR: foo"])))))
 
 (deftest test-edit-captured-ref-comp
   (let [get-inner-prop (fn [c k] (get-in c (conj [1] k)))]
@@ -119,6 +122,7 @@
         (is (= (get-inner-prop comp :get-captured-ref) :a))
         (is (not (nil? (get-inner-prop comp :on-cap-ref-selection))))
         (is (nil? (get-inner-prop comp :cap-ref-id-value)))
+        (is (nil? (get-inner-prop comp :cap-ref-selection-error)))
         (is (not (nil? (get-inner-prop comp :on-cap-ref-id-change))))
         (is (nil? (get-inner-prop comp :editted-cap-ref)))
         (is (not (nil? (get-inner-prop comp :on-editted-cap-ref-change))))
@@ -146,7 +150,20 @@
         ((get-inner-prop (comp-1) :toggle-loading) true)
         (is (true? (get-inner-prop (comp-1) :loading?)))
         ((get-inner-prop (comp-1) :toggle-loading) false)
-        (is (false? (get-inner-prop (comp-1) :loading?)))))))
+        (is (false? (get-inner-prop (comp-1) :loading?)))))
+    (testing "Updated cap-ref-selection-error if selection fails"
+      (let [comp-1 (rc/edit-captured-ref-comp {})
+            ;; The http response
+            http-response {:status 404}]
+        ;; Calls on-cap-ref-selection with an errored response
+        ((get-inner-prop (comp-1) :on-cap-ref-selection)
+         {:error true :response http-response})
+        ;; Expects cap-ref-selection-error to have been set
+        (is (= (get-inner-prop (comp-1) :cap-ref-selection-error) "Not found!"))
+        ;; Now simulates a selection that works just fine
+        ((get-inner-prop (comp-1) :on-cap-ref-selection) {})
+        ;; And the error should be nil again
+        (is (nil? (get-inner-prop (comp-1) :cap-ref-selection-error)))))))
 
 (deftest test-edit-captured-ref-comp--calls-hput-on-submit
   (let [[hput!-args update-hput!-args] (utils/args-saver)

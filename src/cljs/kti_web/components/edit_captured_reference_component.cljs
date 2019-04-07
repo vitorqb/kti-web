@@ -37,8 +37,9 @@
 
 (defn edit-captured-ref-comp--inner
   [{:keys [get-captured-ref on-cap-ref-selection cap-ref-id-value
-           on-cap-ref-id-change editted-cap-ref on-editted-cap-ref-change
-           on-edit-cap-ref-submit loading? toggle-loading status]}]
+           cap-ref-selection-error on-cap-ref-id-change editted-cap-ref
+           on-editted-cap-ref-change on-edit-cap-ref-submit loading?
+           toggle-loading status]}]
   [:div
    [:h3 "Edit Captured Reference Form"]
    [select-captured-ref
@@ -49,6 +50,7 @@
      :toggle-loading toggle-loading}]
    (cond
      loading? [:span "Loading..."]
+     cap-ref-selection-error [:span (str "ERROR: " cap-ref-selection-error)]
      editted-cap-ref
      [edit-captured-ref-form
       {:cap-ref editted-cap-ref
@@ -59,6 +61,7 @@
 (defn edit-captured-ref-comp [{:keys [hput! hget!]}]
   "A form to edit a captured reference."
   (let [selected-id-value (r/atom nil)
+        cap-ref-selection-error (r/atom nil)
         editted-cap-ref (r/atom nil)
         status (r/atom nil)
         loading? (r/atom false)
@@ -66,11 +69,21 @@
         (fn []
           (let [resp-chan (hput! @selected-id-value @editted-cap-ref)]
             (go (let [{:keys [error]} (<! resp-chan)]
-                  (reset! status (if error "Error!" "Success!"))))))]
+                  (reset! status (if error "Error!" "Success!"))))))
+        handle-cap-ref-selection
+        (fn [{:keys [error response] :as result}]
+          (reset! editted-cap-ref nil)
+          (if error
+            (reset! cap-ref-selection-error
+                    (if (= (:status response) 404) "Not found!" "Unkown error!"))
+            (do
+              (reset! editted-cap-ref result)
+              (reset! cap-ref-selection-error nil))))]
     (fn []
       [edit-captured-ref-comp--inner
        {:get-captured-ref hget!
-        :on-cap-ref-selection #(reset! editted-cap-ref %)
+        :on-cap-ref-selection handle-cap-ref-selection
+        :cap-ref-selection-error @cap-ref-selection-error
         :cap-ref-id-value @selected-id-value
         :on-cap-ref-id-change #(reset! selected-id-value %)
         :editted-cap-ref @editted-cap-ref
