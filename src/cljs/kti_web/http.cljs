@@ -10,8 +10,8 @@
                                      {:headers
                                       {"authorization" (str "TOKEN " @token)}}
                                      (and json-params {:json-params json-params})))]
-    (go (let [{:keys [success body]} (<! req-chan)]
-          (>! out-chan (if success body {:error true}))))
+    (go (let [{:keys [success body] :as response} (<! req-chan)]
+          (>! out-chan (if success body {:error true :response response}))))
     out-chan))
 
 (defn post-captured-reference! [ref]
