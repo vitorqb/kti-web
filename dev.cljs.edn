@@ -1,1 +1,1 @@
-^{:watch-dirs ["src/cljc" "src/cljs" "env/dev/cljs"]} {:main kti-web.dev}
+^{:watch-dirs ["src/cljc" "src/cljs" "env/dev/cljs" "test/cljs"]} {:main kti-web.dev}

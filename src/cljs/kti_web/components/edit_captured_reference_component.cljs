@@ -39,15 +39,18 @@
 (defn edit-captured-ref-comp--inner
   [{:keys [get-captured-ref on-cap-ref-selection cap-ref-id-value
            on-cap-ref-id-change editted-cap-ref on-editted-cap-ref-change
-           on-edit-cap-ref-submit status]}]
+           on-edit-cap-ref-submit loading? toggle-loading status]}]
   [:div
    [:h3 "Edit Captured Reference Form"]
    [select-captured-ref
     {:get-captured-ref get-captured-ref
      :on-selection on-cap-ref-selection
      :id-value cap-ref-id-value
-     :on-id-change on-cap-ref-id-change}]
-   (when editted-cap-ref
+     :on-id-change on-cap-ref-id-change
+     :toggle-loading toggle-loading}]
+   (cond
+     loading? [:span "Loading..."]
+     editted-cap-ref
      [edit-captured-ref-form
       {:cap-ref editted-cap-ref
        :on-cap-ref-change on-editted-cap-ref-change
@@ -60,6 +63,7 @@
   (let [selected-id-value (r/atom nil)
         editted-cap-ref (r/atom nil)
         status (r/atom nil)
+        loading? (r/atom false)
         handle-submit
         (fn []
           (let [resp-chan (hput! @selected-id-value @editted-cap-ref)]
@@ -74,4 +78,6 @@
         :editted-cap-ref @editted-cap-ref
         :on-editted-cap-ref-change #(reset! editted-cap-ref %)
         :on-edit-cap-ref-submit handle-submit
-        :status @status}])))
+        :status @status
+        :loading? @loading?
+        :toggle-loading #(reset! loading? %)}])))
