@@ -40,3 +40,9 @@
   (run-req!
    {:http-fn http/delete
     :url (api-url (str "captured-references/" id))}))
+
+(defn post-article! [article-spec]
+  (run-req!
+   {:http-fn http/post
+    :url (api-url "articles")
+    :json-params article-spec}))

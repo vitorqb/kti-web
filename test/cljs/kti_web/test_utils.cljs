@@ -12,3 +12,4 @@
   ([] (prevent-default-event (constantly nil)))
   ([f] (clj->js {:preventDefault f})))
 
+(defn target-value-event [x] (clj->js {:target {:value x}}))
