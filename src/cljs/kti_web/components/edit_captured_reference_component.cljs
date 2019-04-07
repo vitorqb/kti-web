@@ -4,8 +4,7 @@
    [reagent.core :as r]
    [kti-web.components.utils :refer [submit-button call-prevent-default]]
    [kti-web.components.select-captured-ref :refer [select-captured-ref]]
-   [kti-web.utils :refer [call-prevent-default call-with-val]]
-   [kti-web.http :as http]))
+   [kti-web.utils :refer [call-prevent-default call-with-val]]))
 
 (defn captured-ref-inputs--id [{:keys [id]}]
   [:div [:span "Id"] [:input {:value (or id "") :disabled true}]])
@@ -57,9 +56,8 @@
        :on-submit on-edit-cap-ref-submit}])
    [:div status]])
 
-(defn edit-captured-ref-comp [{:keys [hput!]}]
+(defn edit-captured-ref-comp [{:keys [hput! hget!]}]
   "A form to edit a captured reference."
-  ;; !!!! TODO -> Change get-captured-ref for hget!
   (let [selected-id-value (r/atom nil)
         editted-cap-ref (r/atom nil)
         status (r/atom nil)
@@ -71,7 +69,7 @@
                   (reset! status (if error "Error!" "Success!"))))))]
     (fn []
       [edit-captured-ref-comp--inner
-       {:get-captured-ref http/get-captured-reference!
+       {:get-captured-ref hget!
         :on-cap-ref-selection #(reset! editted-cap-ref %)
         :cap-ref-id-value @selected-id-value
         :on-cap-ref-id-change #(reset! selected-id-value %)
