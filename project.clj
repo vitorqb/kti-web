@@ -36,7 +36,7 @@
                                     [:cljsbuild :builds :app :compiler :output-to]]
 
   :source-paths ["src/clj" "src/cljc" "src/cljs"]
-  :resource-paths ["resources" "target/cljsbuild"]
+  :resource-paths ["resources" "target/cljsbuild" "target/public"]
 
   :minify-assets
   {:assets
