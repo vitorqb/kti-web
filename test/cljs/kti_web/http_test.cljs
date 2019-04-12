@@ -6,6 +6,23 @@
    [kti-web.test-utils :as utils]
    [kti-web.state :as state]))
 
+(deftest test-prepare-request-opts
+  (testing "No json-body"
+    (is (= (rc/prepare-request-opts)
+           {:with-credentials? false
+            :headers {"authorization" (str "TOKEN " @state/token)}})))
+  (testing "With json-body"
+    (is (= (rc/prepare-request-opts {:a :b})
+           {:with-credentials? false
+            :headers {"authorization" (str "TOKEN " @state/token)}
+            :json-params {:a :b}}))))
+
+(deftest test-parse-response
+  (testing "Errored"
+    (let [response {:success false :a :b}]
+      (is (= (rc/parse-response response) {:error true :response response}))))
+  (testing "Success"
+    (is (= (rc/parse-response {:success true :body :a})) :a)))
 
 (deftest test-run-req!-base
   (let [http-fn-chan (chan 1)

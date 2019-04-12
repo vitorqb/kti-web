@@ -1,18 +1,31 @@
 (ns kti-web.http
   (:require
-   [cljs.core.async :refer [>! <! take! put! go chan close!]]
+   [cljs.core.async :refer [>! <! take! put! go chan close!] :as async]
    [cljs-http.client :as http]
    [kti-web.state :refer [token api-url]]))
 
-(defn run-req! [{:keys [http-fn url json-params]}]
-  (let [out-chan (chan)
-        req-chan (http-fn url (merge {:with-credentials? false}
-                                     {:headers
-                                      {"authorization" (str "TOKEN " @token)}}
-                                     (and json-params {:json-params json-params})))]
-    (go (let [{:keys [success body] :as response} (<! req-chan)]
-          (>! out-chan (if success body {:error true :response response}))))
-    out-chan))
+(defn prepare-request-opts
+  "Returns a map with options for running requests with cljs-http"
+  ([] (prepare-request-opts nil))
+  ([json-params]
+   (merge {:with-credentials? false
+           :headers {"authorization" (str "TOKEN " @token)}}
+          (and json-params {:json-params json-params}))))
+
+(defn parse-response
+  "Parses an http response into a default format."
+  [{:keys [success body] :as response}]
+  (if success
+    body
+    {:error true :response response}))
+
+(defn run-req!
+  "Runs a request using http-fn and json-params, maps the response with
+  parse-response and returns a channel with the parsed response."
+  [{:keys [http-fn url json-params]}]
+  (async/map
+   parse-response
+   [(http-fn url (prepare-request-opts json-params))]))
 
 (defn post-captured-reference! [ref]
   (run-req!
