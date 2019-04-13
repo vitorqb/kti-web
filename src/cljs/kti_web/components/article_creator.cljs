@@ -3,7 +3,7 @@
    [clojure.string :as str]
    [reagent.core :as r :refer [atom]]
    [cljs.core.async :refer [chan <! >! put! go]]
-   [kti-web.utils :refer [call-with-val call-prevent-default]]
+   [kti-web.utils :refer [call-with-val call-prevent-default] :as utils]
    [kti-web.components.utils :refer [submit-button]]))
 
 (defn parse-tags [x]
@@ -73,8 +73,9 @@
           (let [out-chan (chan)
                 resp-chan (hpost! (parse-article-spec @article-spec))]
             (go
-              (let [{:keys [error]} (<! resp-chan)]
-                (assert (nil? error) "Something went wrong on post call")
+              (let [{:keys [error? data]} (<! resp-chan)]
+                (when error?
+                  (utils/js-alert (str "Error: " (utils/to-str data))))
                 (>! out-chan 1)))
             out-chan))]
     (fn []

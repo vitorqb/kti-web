@@ -7,8 +7,7 @@
    [accountant.core :as accountant]
    [cljs.core.async :refer [chan go take! put! <! >!]]
    [kti-web.local-storage :as local-storage]
-   [kti-web.http :refer [run-req!
-                         post-captured-reference!
+   [kti-web.http :refer [post-captured-reference!
                          get-captured-reference!
                          get-captured-references!
                          put-captured-reference!
@@ -22,7 +21,8 @@
    [kti-web.components.article-deletor :refer [article-deletor]]
    [kti-web.components.article-table :refer [article-table]]
    [kti-web.components.utils :refer [submit-button]]
-   [kti-web.utils :refer [call-with-val call-prevent-default]]))
+   [kti-web.utils :refer [call-with-val call-prevent-default js-alert]
+    :as utils]))
 
 (declare
  capture-form
@@ -103,8 +103,10 @@
 (defn capture-form [{:keys [post! c-done]}]
   (let [state (r/atom {:value nil :loading? false :result nil})
         extract-result
-        (fn [{:keys [id reference error]}]
-          (if error "Error!" (str "Created with id " id " and ref " reference)))
+        (fn [{:keys [data error?]}]
+          (if error?
+            "Error!"
+            (str "Created with id " (data :id) " and ref " (data :reference))))
         handle-submit
         (fn [e]
           (swap! state assoc :loading? true :result nil)
@@ -139,8 +141,15 @@
         run-get!
         (fn []
           (swap! state assoc :loading? true :refs nil)
-          (go (swap! state assoc :loading? false :refs (<! (get!)))
-              (and c-done (>! c-done 1))))]
+          (let [get-chan (get!)]
+            (go
+              (let [{:keys [error? data]} (<! get-chan)]
+                (if error?
+                  (do
+                    (js-alert (str "Error during get: " (:ROOT data)))
+                    (swap! state assoc :loading? false :refs []))
+                  (swap! state assoc :loading? false :refs data))
+                (and c-done (>! c-done 1))))))]
     (run-get!)
     #(captured-refs-table-inner (assoc @state :fn-refresh! run-get!))))
 
@@ -163,8 +172,11 @@
         run-delete!
         (fn [id]
           (swap! state assoc :result nil)
-          (go (let [{:keys [error]} (<! (delete! id))]
-                (swap! state assoc :result (if error "Error!" "Deleted!"))
+          (go (let [{:keys [error? data]} (<! (delete! id))]
+                (swap! state assoc :result
+                       (if error?
+                         (str "Error: " (utils/to-str data))
+                         "Deleted!"))
                 (and c-done (>! c-done 1)))))]
     #(delete-captured-ref-form-inner (assoc @state
                                             :update-ref-id! update-ref-id

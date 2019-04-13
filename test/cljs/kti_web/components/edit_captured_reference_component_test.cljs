@@ -3,9 +3,12 @@
    [cljs.test :refer-macros [is are deftest testing use-fixtures async]]
    [cljs.core.async :refer [chan <! >! put! go]]
    [reagent.core :as reagent :refer [atom]]
+   [kti-web.http :as http]
    [kti-web.components.edit-captured-reference-component :as rc]
    [kti-web.components.select-captured-ref :refer [select-captured-ref]]
-   [kti-web.test-utils :as utils]))
+   [kti-web.utils :refer [to-str]]
+   [kti-web.test-utils :as utils]
+   [kti-web.test-factories :as factories]))
 
 (deftest test-captured-ref-inputs--id
   (let [mount rc/captured-ref-inputs--id
@@ -143,7 +146,7 @@
     (testing "Resets editted-cap-ref on selection"
       (let [comp-1 (rc/edit-captured-ref-comp {})]
         (is (nil? (get-inner-prop (comp-1) :editted-cap-ref)))
-        ((get-inner-prop (comp-1) :on-cap-ref-selection) :foo)
+        ((get-inner-prop (comp-1) :on-cap-ref-selection) {:data :foo})
         (is (= (get-inner-prop (comp-1) :editted-cap-ref) :foo))))
     (testing "Sets loading by toggle-loading"
       (let [comp-1 (rc/edit-captured-ref-comp {})]
@@ -153,13 +156,14 @@
         (is (false? (get-inner-prop (comp-1) :loading?)))))
     (testing "Updated cap-ref-selection-error if selection fails"
       (let [comp-1 (rc/edit-captured-ref-comp {})
-            ;; The http response
-            http-response {:status 404}]
+            ;; The http response has an error
+            http-response factories/http-response-error-msg]
         ;; Calls on-cap-ref-selection with an errored response
         ((get-inner-prop (comp-1) :on-cap-ref-selection)
-         {:error true :response http-response})
+         (http/parse-response http-response))
         ;; Expects cap-ref-selection-error to have been set
-        (is (= (get-inner-prop (comp-1) :cap-ref-selection-error) "Not found!"))
+        (is (= (get-inner-prop (comp-1) :cap-ref-selection-error)
+               (to-str {:ROOT (get-in http-response [:body :error-msg])})))
         ;; Now simulates a selection that works just fine
         ((get-inner-prop (comp-1) :on-cap-ref-selection) {})
         ;; And the error should be nil again
@@ -181,14 +185,36 @@
     ;; It edits the cap-ref
     ((get-in (comp-1) [1 :on-editted-cap-ref-change]) new-cap-ref)
     ;; And submits
-    ((get-in (comp-1) [1 :on-edit-cap-ref-submit]))
-    ;; hput! was called with the id and the new cap ref
-    (is (= @hput!-args [[(:id cap-ref) new-cap-ref]]))
-    ;; hput! writes something into the channel and the status is Success!
-    (async done
-           (go (>! hput!-chan 1)
-               (js/setTimeout
-                (fn []
-                  (is (= (get-in (comp-1) [1 :status]) "Success!"))
-                  (done))
-                100)))))
+    (let [ret-chan ((get-in (comp-1) [1 :on-edit-cap-ref-submit]))]
+      ;; hput! was called with the id and the new cap ref
+      (is (= @hput!-args [[(:id cap-ref) new-cap-ref]]))
+      ;; hput! writes something into the channel and the status is Success!
+      (async done
+             (go
+               (>! hput!-chan 1)
+               (is (= (<! ret-chan) :done))
+               (is (= (get-in (comp-1) [1 :status]) "Success!"))
+               (done))))))
+
+(deftest test-edit-captured-ref-comp--sets-error
+  (let [parsed-error (http/parse-response factories/http-response-schema-error)
+        hput!-chan (chan)
+        comp-1 (rc/edit-captured-ref-comp {:hput! (constantly hput!-chan)})]
+    ;; User selects cap-ref-id
+    ((get-in (comp-1) [1 :on-cap-ref-id-change]) (:id factories/captured-ref))
+    ;; And submits the selection
+    ((get-in (comp-1) [1 :on-cap-ref-selection]) factories/captured-ref)
+    ;; Changes the reference
+    ((get-in (comp-1) [1 :on-editted-cap-ref-change])
+     (assoc factories/captured-ref :reference "Baz"))
+    ;; And submits
+    (let [ret-chan ((get-in (comp-1) [1 :on-edit-cap-ref-submit]))]
+      (async done
+             (go
+               ;; An error is returned
+               (>! hput!-chan parsed-error)
+               (is (= (<! ret-chan) :done))
+               ;; And the status is the error
+               (is (= (get-in (comp-1) [1 :status])
+                      (str "Error: " (to-str (:data parsed-error)))))
+               (done))))))

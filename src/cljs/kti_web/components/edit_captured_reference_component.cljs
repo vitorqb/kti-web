@@ -1,10 +1,10 @@
 (ns kti-web.components.edit-captured-reference-component
   (:require
-   [cljs.core.async :refer [go <!]]
+   [cljs.core.async :refer [go <! >! timeout]]
    [reagent.core :as r]
    [kti-web.components.utils :refer [submit-button call-prevent-default]]
    [kti-web.components.select-captured-ref :refer [select-captured-ref]]
-   [kti-web.utils :refer [call-prevent-default call-with-val]]))
+   [kti-web.utils :refer [call-prevent-default call-with-val to-str]]))
 
 (defn captured-ref-inputs--id [{:keys [id]}]
   [:div [:span "Id"] [:input {:value (or id "") :disabled true}]])
@@ -67,18 +67,21 @@
         loading? (r/atom false)
         handle-submit
         (fn []
-          (let [resp-chan (hput! @selected-id-value @editted-cap-ref)]
-            (go (let [{:keys [error]} (<! resp-chan)]
-                  (reset! status (if error "Error!" "Success!"))))))
+          (let [ret-chan (timeout 3000)
+                resp-chan (hput! @selected-id-value @editted-cap-ref)]
+            (go (let [{:keys [error? data]} (<! resp-chan)]
+                  (reset! status (if error?
+                                   (str "Error: " (to-str data))
+                                   "Success!"))
+                  (>! ret-chan :done)))
+            ret-chan))
         handle-cap-ref-selection
-        (fn [{:keys [error response] :as result}]
+        (fn [{:keys [error? data]}]
           (reset! editted-cap-ref nil)
-          (if error
-            (reset! cap-ref-selection-error
-                    (if (= (:status response) 404) "Not found!" "Unkown error!"))
-            (do
-              (reset! editted-cap-ref result)
-              (reset! cap-ref-selection-error nil))))]
+          (reset! cap-ref-selection-error nil)
+          (if error?
+            (reset! cap-ref-selection-error (to-str data))
+            (reset! editted-cap-ref data)))]
     (fn []
       [edit-captured-ref-comp--inner
        {:get-captured-ref hget!
