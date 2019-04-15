@@ -3,7 +3,10 @@
    [cljs.test :refer-macros [is are deftest testing use-fixtures async]]
    [reagent.core :as reagent :refer [atom]]
    [kti-web.core :as rc]
+   [kti-web.http :as http]
+   [kti-web.utils]
    [kti-web.test-utils :as utils :refer [args-saver]]
+   [kti-web.test-factories :as factories]
    [cljs.core.async :refer [>! <! take! put! go chan close!]]))
 
 
@@ -77,43 +80,82 @@
           comp        (comp-1)
           on-change   (get-in comp [2 2 1 :on-change])]
       (on-change "new-input")
-      (is (= (get-in (comp-1) [2 2 1 :value]) "new-input"))))
-  (testing "Sets result after submit"
-    (let [c (chan 1)
-          c-done (chan 1)
-          prevent-default-call-count (atom 0)
-          prevent-default #(swap! prevent-default-call-count + 1)
-          comp-1 (rc/capture-form {:post! (constantly c) :c-done c-done})
-          comp (comp-1)
-          on-change (get-in comp [2 2 1 :on-change])
-          on-submit (get-in comp [2 1 :on-submit])]
-      (on-change "foo")
-      (on-submit (utils/prevent-default-event prevent-default))
-      (is (= @prevent-default-call-count 1))
-      (async done (go (>! c {:id 1 :reference "foo"})
-                      (<! c-done)
-                      (is (= (get-in (comp-1) [2 4 1])
-                             "Created with id 1 and ref foo"))
-                      (done))))))
+      (is (= (get-in (comp-1) [2 2 1 :value]) "new-input")))))
+
+(deftest test-capture-form--sets-error
+  (let [get-on-submit #(get-in % [2 1 :on-submit])
+        get-result-div #(get-in % [2 4])
+        post-chan (chan 1)
+        done-chan (chan 1)
+        comp-1 (rc/capture-form {:post! (constantly post-chan)
+                                 :c-done done-chan})]
+    ;; Submits
+    ((get-on-submit (comp-1)) (utils/prevent-default-event))
+    ;; Result is nil
+    (is (= [:div nil] (get-result-div (comp-1))))
+    (async done
+           (go
+             ;; Simulates errored response
+             (>! post-chan (http/parse-response factories/http-response-error-msg))
+             ;; Waits for completion
+             (<! done-chan)
+             ;; Result is "Error!"
+             (is (= [:div "Error!"] (get-result-div (comp-1))))
+             (done)))))
+
+(deftest test-capture-form--sets-result
+  (let [post-chan (chan 1)
+        done-chan (chan 1)
+        comp-1 (rc/capture-form {:post! (constantly post-chan)
+                                 :c-done done-chan})
+        get-on-submit #(get-in (comp-1) [2 1 :on-submit])
+        get-result-div #(get-in (comp-1) [2 4])]
+    ;; Submits
+    ((get-on-submit) (utils/prevent-default-event))
+    (async done
+           (go
+             ;; Simulates okay response
+             (>! post-chan (factories/parsed-ok-response factories/captured-ref))
+             ;; Waits
+             (<! done-chan)
+             ;; Results is corrects
+             (is (= [:div "Created with id 49 and ref Foobarbaz"] (get-result-div)))
+             (done)))))
+    
 
 (deftest test-captured-refs-table
   (let [c (chan 1)
         c-done (chan 1)
-        comp-1 (rc/captured-refs-table {:get! (constantly c) :c-done c-done})
-        comp (comp-1)]
-    (is (= [:div "LOADING..."] (get comp 3)))
-    (async done (go (>! c [{:id 1
-                            :reference "foo"
-                            :created-at "2018-01-01T00:00:00"
-                            :classified true}])
-                    (<! c-done)
-                    (is (= :table (get-in (comp-1) [3 0])))
-                    (is (= :thead (get-in (comp-1) [3 1 0])))
-                    (is (= ["id" "ref" "created at" "classified?"]
-                           (-> (comp-1)
-                               (get-in [3 1 1 1])
-                               (->> (map #(get % 2))))))
-                    (done)))))
+        comp-1 (rc/captured-refs-table {:get! (constantly c) :c-done c-done})]
+    (is (= [:div "LOADING..."] (get (comp-1) 3)))
+    (async done
+           (go (>! c [factories/captured-ref])
+               (<! c-done)
+               (is (= :table (get-in (comp-1) [3 0])))
+               (is (= :thead (get-in (comp-1) [3 1 0])))
+               (is (= ["id" "ref" "created at" "classified?"]
+                      (-> (comp-1) (get-in [3 1 1 1]) (->> (map #(get % 2))))))
+               (done)))))
+
+(deftest test-captured-refs-table--alerts-on-error
+  (let [req-chan (chan)
+        done-chan (chan)
+        error (http/parse-response factories/http-response-error-msg)
+        comp-1 (rc/captured-refs-table
+                {:get! (constantly req-chan) :c-done done-chan})]
+    (async done
+           (go
+             ;; Captures js/alert
+             (let [[js-alert-args js-alert] (utils/args-saver)]
+               (with-redefs [kti-web.utils/js-alert js-alert]
+                 ;; Requests returns an error
+                 (>! req-chan error)
+                 (<! done-chan)
+                 ;; That was passed to js/alert
+                 (is (= @js-alert-args
+                        [[(str "Error during get: " (get-in error [:data :ROOT]))]]))
+                 (done)))))))
+             
 
 (deftest test-delete-captured-ref-form
   (let [get-result-div #(get-in % [1 7])

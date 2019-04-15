@@ -4,6 +4,13 @@
    [cljs-http.client :as http]
    [kti-web.state :refer [token api-url]]))
 
+(def ERR-MSG--INTERNAL-SERVER-ERROR
+  (concat
+   "Something went wrong and potentially it is not your fault."
+   " Internal Server Error (500)"))
+(def ERR-MSG--NOT-FOUND "The requested resource was not found!")
+(def ERR-MSG--INVALID-AUTH "Invalid authentication - did you forgot the token?")
+
 (defn prepare-request-opts
   "Returns a map with options for running requests with cljs-http"
   ([] (prepare-request-opts nil))
@@ -12,12 +19,30 @@
            :headers {"authorization" (str "TOKEN " @token)}}
           (and json-params {:json-params json-params}))))
 
+(defn parse-error-body
+  "Given a http response body, returns a map of error messages"
+  [{:keys [error-msg errors] :as body}]
+  (if-not (or error-msg errors)
+    {:ROOT "Unkown error!"}
+    (-> (or errors {})
+        (cond-> error-msg
+          (assoc :ROOT error-msg)))))
+
+(defn parse-error-response
+  "Given an http response, returns a map of error messages"
+  [{:keys [body status]}]
+  (case status
+    (401 403) {:ROOT ERR-MSG--INVALID-AUTH}
+    404 {:ROOT ERR-MSG--NOT-FOUND}
+    500 {:ROOT ERR-MSG--INTERNAL-SERVER-ERROR}
+    (parse-error-body body)))
+
 (defn parse-response
-  "Parses an http response into a default format."
+  "Parses an http repsonse into a default format."
   [{:keys [success body] :as response}]
   (if success
-    body
-    {:error true :response response}))
+    {:data body}
+    {:error? true :data (parse-error-response response)}))
 
 (defn run-req!
   "Runs a request using http-fn and json-params, maps the response with

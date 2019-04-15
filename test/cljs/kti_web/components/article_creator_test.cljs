@@ -3,7 +3,8 @@
    [cljs.test :refer-macros [is are deftest testing use-fixtures async]]
    [cljs.core.async :refer [chan <! >! put! go]]
    [kti-web.components.article-creator :as rc]
-   [kti-web.test-utils :as utils]))
+   [kti-web.test-utils :as utils]
+   [kti-web.test-factories :as factories]))
 
 (deftest test-make-input
   (let [foo-input (rc/make-input {:text "Foo"})]
@@ -95,10 +96,7 @@
         hpost!-chan (chan)
         hpost! (fn [x] (hpost!-save-args x) hpost!-chan)
         comp-1 (rc/article-creator {:hpost! hpost!})
-        article-spec {:id-captured-reference "12"
-                      :description "Foo Bar"
-                      :tags "tag1, tag2"
-                      :action-link "www.google.com"}]
+        article-spec factories/article-raw-spec]
     ;; User fills the form with an article spec
     ((get-in (comp-1) [1 :on-article-spec-update]) article-spec)
     ;; And submits
