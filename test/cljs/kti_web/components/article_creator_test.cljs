@@ -2,7 +2,9 @@
   (:require
    [cljs.test :refer-macros [is are deftest testing use-fixtures async]]
    [cljs.core.async :refer [chan <! >! put! go]]
+   [kti-web.http :as http]
    [kti-web.components.article-creator :as rc]
+   [kti-web.components.utils :as components-utils]
    [kti-web.test-utils :as utils]
    [kti-web.test-factories :as factories]))
 
@@ -77,7 +79,10 @@
         (is (= (get-in comp [1])
                [rc/article-creator-form {:article-spec :a
                                          :on-article-spec-update :b
-                                         :on-article-creation-submit :c}]))))))
+                                         :on-article-creation-submit :c}]))))
+    (testing "Renders error component"
+      (is (= [components-utils/errors-displayer {:errors ::foo}]
+             (get (mount {:errors ::foo}) 2))))))
 
 (deftest test-article-creator
   (let [mount rc/article-creator
@@ -108,5 +113,24 @@
                ;; Simulates the response from the server
                (>! hpost!-chan (assoc article-spec :id 9))
                ;; And sees that post! is done
-               (is (= (<! out-chan) 1))
+               (is (= (<! out-chan) :done))
+               (done))))))
+
+(deftest test-article-creator--sets-errors
+  (let [hpost!-chan (chan)
+        comp-1 (rc/article-creator {:hpost! (constantly hpost!-chan)})
+        errors {:foo "Bar"}
+        http-resp-err
+        (assoc-in factories/http-response-schema-error [:body :errors] errors)]
+    ;; User fills article spec
+    ((get-in (comp-1) [1 :on-article-spec-update]) factories/article-raw-spec)
+    ;; Submits
+    (let [out-chan ((get-in (comp-1) [1 :on-article-creation-submit]))]
+      (async done
+             (go
+               ;; Request returns an error
+               (>! hpost!-chan (http/parse-response http-resp-err))
+               (is (= :done (<! out-chan)))
+               ;; The error is set on the inner
+               (is (= {:foo "Bar"} (get-in (comp-1) [1 :errors])))
                (done))))))
