@@ -29,7 +29,12 @@
                              :tags [:foo :bar]
                              :description "baz"
                              :action-link nil}]
-    (is (= (rc/parse-article-spec article-spec) parsed-article-spec))))
+    (testing "Base"
+      (is (= (rc/parse-article-spec article-spec) parsed-article-spec)))
+    (testing "Missing action-link"
+      ;; If an action-link is missing, it should be nil
+      (is (= (rc/parse-article-spec (dissoc article-spec :action-link))
+             parsed-article-spec)))))
 
 (deftest test-article-creator-form
   (let [mount rc/article-creator-form]

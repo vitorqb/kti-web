@@ -21,7 +21,9 @@
 
 (defn parse-article-spec [x]
   "Parses an article spec."
-  (into {} (map (fn [[k v]] [k ((make-parser k) v)]) x)))
+  (->> x
+       (map (fn [[k v]] [k ((make-parser k) v)]))
+       (into {:action-link nil})))
 
 (defn make-input [{:keys [text type]}]
   "Makes an input component"
