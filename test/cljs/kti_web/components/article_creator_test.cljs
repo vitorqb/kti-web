@@ -96,8 +96,8 @@
     ((get-in (comp-1) [1 :on-article-spec-update]) article-spec)
     ;; And submits
     (let [out-chan ((get-in (comp-1) [1 :on-article-creation-submit]))]
-      ;; hpost! is called with the parsed new article-spec
-      (is (= @hpost!-args [[(articles/parse-article-spec article-spec)]]))
+      ;; hpost! is called with the serialized new article-spec
+      (is (= @hpost!-args [[(articles/serialize-article-spec article-spec)]]))
       (async done
              (go
                ;; Simulates the response from the server

@@ -57,7 +57,7 @@
           (let [out-chan (async/timeout 3000)
                 resp-chan (-> @state
                               :article-spec
-                              articles/parse-article-spec
+                              articles/serialize-article-spec
                               hpost!)]
             (go
               (let [{:keys [error? data]} (<! resp-chan)]

@@ -2,21 +2,35 @@
   (:require
    [clojure.string :as str]))
 
-(defn parse-tags [x]
+(defn serialize-tags [x]
   "Transforms tags from string to a list of keywords"
   (if (= x "") [] (->> (str/split x #",") (map str/trim) (map keyword))))
 
-(defn make-parser [k]
-  "Returns a function that knows how to parse a raw input of this tag
+(defn make-serializer [k]
+  "Returns a function that knows how to serialize a raw input of this tag
    into it's value"
   (case k
-    :tags parse-tags
+    :tags serialize-tags
     :id-captured-reference js/parseInt
     :action-link #(if (= % "") nil %)
     identity))
 
-(defn parse-article-spec [x]
-  "Parses an article spec."
+(defn make-deserializer [k]
+  "Returns a function that knows how to deserialize the value for the key k"
+  (case k
+    :tags #(str/join ", " %)
+    :id-captured-reference str
+    identity))
+
+(defn serialize-article-spec [x]
+  "Serializes an article spec."
   (->> x
-       (map (fn [[k v]] [k ((make-parser k) v)]))
+       (map (fn [[k v]] [k ((make-serializer k) v)]))
        (into {:action-link nil})))
+
+(defn article->raw
+  "Converts an article in it's raw (string) representation"
+  [article]
+  (->> (dissoc article :id)
+       (map (fn [[k v]] [k ((make-deserializer k) v)]))
+       (into {})))

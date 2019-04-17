@@ -46,6 +46,13 @@
    :tags "tag1, tag2"
    :action-link "www.google.com"})
 
+(def article
+  {:id 92
+   :id-captured-reference 9
+   :description "Baz"
+   :tags ["tag1" "tag2"]
+   :action-link "www.gihub.com/vitorqb"})
+
 (defn ok-response
   "Factory for responses with 200 and some data"
   [body]
