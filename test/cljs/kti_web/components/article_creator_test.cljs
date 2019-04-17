@@ -5,6 +5,7 @@
    [kti-web.http :as http]
    [kti-web.components.article-creator :as rc]
    [kti-web.components.utils :as components-utils]
+   [kti-web.models.articles :as articles]
    [kti-web.test-utils :as utils]
    [kti-web.test-factories :as factories]))
 
@@ -19,22 +20,6 @@
             comp (foo-input {:on-change on-change})]
         ((get-in comp [2 1 :on-change]) (utils/target-value-event "foo"))
         (is (= @on-change-args [["foo"]]))))))
-
-(deftest test-parse-article-spec
-  (let [article-spec {:id-captured-reference "22"
-                      :tags "foo,   bar"
-                      :description "baz"
-                      :action-link ""}
-        parsed-article-spec {:id-captured-reference 22
-                             :tags [:foo :bar]
-                             :description "baz"
-                             :action-link nil}]
-    (testing "Base"
-      (is (= (rc/parse-article-spec article-spec) parsed-article-spec)))
-    (testing "Missing action-link"
-      ;; If an action-link is missing, it should be nil
-      (is (= (rc/parse-article-spec (dissoc article-spec :action-link))
-             parsed-article-spec)))))
 
 (deftest test-article-creator-form
   (let [mount rc/article-creator-form]
@@ -111,8 +96,8 @@
     ((get-in (comp-1) [1 :on-article-spec-update]) article-spec)
     ;; And submits
     (let [out-chan ((get-in (comp-1) [1 :on-article-creation-submit]))]
-      ;; hpost! is called with the parsed new article-spec
-      (is (= @hpost!-args [[(rc/parse-article-spec article-spec)]]))
+      ;; hpost! is called with the serialized new article-spec
+      (is (= @hpost!-args [[(articles/serialize-article-spec article-spec)]]))
       (async done
              (go
                ;; Simulates the response from the server
