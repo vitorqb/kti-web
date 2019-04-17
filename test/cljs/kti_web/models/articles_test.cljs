@@ -18,7 +18,11 @@
     (testing "Missing action-link"
       ;; If an action-link is missing, it should be nil
       (is (= (rc/serialize-article-spec (dissoc article-spec :action-link))
-             serialized-article-spec)))))
+             serialized-article-spec)))
+    (testing "Missing tags"
+      ;; If tags is missing, it should be and empty link
+      (is (= (rc/serialize-article-spec (dissoc article-spec :tags))
+             (assoc serialized-article-spec :tags []))))))
 
 (deftest test-article->raw
   (testing "Base"

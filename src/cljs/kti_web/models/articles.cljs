@@ -26,7 +26,7 @@
   "Serializes an article spec."
   (->> x
        (map (fn [[k v]] [k ((make-serializer k) v)]))
-       (into {:action-link nil})))
+       (into {:action-link nil :tags []})))
 
 (defn article->raw
   "Converts an article in it's raw (string) representation"

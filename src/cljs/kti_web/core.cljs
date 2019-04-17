@@ -12,7 +12,9 @@
                          get-captured-references!
                          put-captured-reference!
                          delete-captured-reference!
-                         post-article!]]
+                         get-article!
+                         post-article!
+                         put-article!]]
    [kti-web.state :refer [token host api-url init-state]]
    [kti-web.components.edit-captured-reference-component
     :refer [edit-captured-ref-comp]]
@@ -68,7 +70,7 @@
      [:div
       [:h2 "Articles!"]
       [article-creator {:hpost! post-article!}]
-      [article-editor {}]
+      [article-editor {:get-article! get-article! :put-article! put-article!}]
       [article-deletor {}]
       [article-table {}]]]))
 
