@@ -9,18 +9,6 @@
    [kti-web.test-utils :as utils]
    [kti-web.test-factories :as factories]))
 
-(deftest test-make-input
-  (let [foo-input (rc/make-input {:text "Foo"})]
-    (testing "Contains span with text"
-      (is (= (get-in (foo-input {}) [1]) [:span "Foo"])))
-    (testing "Binds value to input"
-      (is (= (get-in (foo-input {:value :a}) [2 1 :value]) :a)))
-    (testing "Calls on-change on change"
-      (let [[on-change-args on-change] (utils/args-saver)
-            comp (foo-input {:on-change on-change})]
-        ((get-in comp [2 1 :on-change]) (utils/target-value-event "foo"))
-        (is (= @on-change-args [["foo"]]))))))
-
 (deftest test-article-creator-form
   (let [mount rc/article-creator-form]
     (testing "Two-way binding with id-captured-reference"

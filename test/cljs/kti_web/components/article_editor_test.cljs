@@ -3,10 +3,111 @@
    [cljs.test :refer-macros [is are deftest testing use-fixtures async]]
    [cljs.core.async :refer [chan <! >! put! go] :as async]
    [kti-web.components.article-editor :as rc]
+   [kti-web.components.utils :as components-utils]
    [kti-web.models.articles :as articles]
    [kti-web.test-utils :as utils]
    [kti-web.test-factories :as factories]))
 
+(deftest test-article-editor-form
+  (let [mount rc/article-editor-form]
+    (testing "Disabled id input"
+      (let [comp (mount {:raw-editted-article-id 87})]
+        ;; Mounts correct input
+        (is (= (get-in comp [2 0]) rc/id-input))
+        ;; Has correct value
+        (is (= (get-in comp [2 1 :value]) 87))
+        ;; Is disabled
+        (is (= (get-in comp [2 1 :disabled] true)))))
+    (testing "id-cap-ref-input"
+      (let [[args fun] (utils/args-saver)
+            comp (mount {:raw-editted-article factories/article-raw-spec
+                         :on-raw-editted-article-change fun})]
+        ;; Mounts correct value
+        (is (= (get-in comp [3 0]) rc/id-cap-ref-input))
+        (is (= (get-in comp [3 1 :value])
+               (:id-captured-reference factories/article-raw-spec)))
+        ;; Calls on-change
+        ((get-in comp [3 1 :on-change]) 312)
+        (is (= @args
+               [[(assoc factories/article-raw-spec :id-captured-reference 312)]]))))
+    (testing "description"
+      (let [[args fun] (utils/args-saver)
+            comp (mount {:raw-editted-article factories/article-raw-spec
+                         :on-raw-editted-article-change fun})]
+        ;; Mounts correct value
+        (is (= (get-in comp [4 0]) rc/description-input))
+        (is (= (get-in comp [4 1 :value])
+               (:description factories/article-raw-spec)))
+        ;; Calls on-change
+        ((get-in comp [4 1 :on-change]) "foo")
+        (is (= @args [[(assoc factories/article-raw-spec :description "foo")]]))))
+    (testing "tags"
+      (let [[args fun] (utils/args-saver)
+            comp (mount {:raw-editted-article factories/article-raw-spec
+                         :on-raw-editted-article-change fun})]
+        ;; Mounts correct value
+        (is (= (get-in comp [5 0]) rc/tags-input))
+        (is (= (get-in comp [5 1 :value]) (:tags factories/article-raw-spec)))
+        ;; Calls on-change
+        ((get-in comp [5 1 :on-change]) "foo, bar, baz")
+        (is (= @args [[(assoc factories/article-raw-spec :tags "foo, bar, baz")]]))))
+    (testing "submitting"
+      (let [[args fun] (utils/args-saver)
+            comp (mount {:on-edit-article-submit fun})]
+        ((get-in comp [1 :on-submit]) (utils/prevent-default-event))
+        (is (= @args [[]]))))))
+
+(deftest test-article-selector
+  (let [mount rc/article-selector]
+    (testing "Two-way binding with selected-article-id"
+      (let [[args fun] (utils/args-saver)
+            comp (mount {:on-article-id-change fun})]
+        ((get-in comp [3 1 :on-change]) (utils/target-value-event "foo"))
+        (is (= @args [["foo"]]))))
+    (testing "Calls on-article-id-submit on submit"
+      (let [[args fun] (utils/args-saver)
+            comp (mount {:on-article-id-submit fun})]
+        ((get-in comp [1 :on-submit]) (utils/prevent-default-event))
+        (is (= @args [[]]))))))
+
+(deftest test-article-editor--inner
+  (let [mount rc/article-editor--inner]
+    (testing "Two-way bind for raw-editted-article"
+      (let [[args fun] (utils/args-saver)
+            comp (mount {:on-raw-editted-article-change fun
+                         :raw-editted-article {:a :b}})]
+        (is (= (get-in comp [3 1 :raw-editted-article]) {:a :b}))
+        ((get-in comp [3 1 :on-raw-editted-article-change]) ::foo)
+        (is (= @args [[::foo]]))))
+    (testing "Passes on-edit-article-submit to form"
+      (let [comp (mount {:on-edit-article-submit ::foo
+                         :raw-editted-article {:a :b}})]
+        (is (= (get-in comp [3 1 :on-edit-article-submit]) ::foo))))
+    (testing "Shows error-displayer for article editting"
+      (let [comp (mount {:status {:edit-article {:errors {::foo ::bar}}}})]
+        (is (= (get comp 4)
+               [components-utils/errors-displayer {:errors {::foo ::bar}}]))))
+    (testing "Don't show article-editor-form if loading"
+      (let [comp (mount {:loading? true :raw-editted-article {::a ::b}})]
+        (is (= (get comp 3) [:div "Loading..."]))))
+    (testing "Don't show article-editor-form if no raw-editted-article"
+      (let [comp (mount {:loading? false :raw-editted-article nil})]
+        (is (= (get comp 3) [:div]))))
+    (testing "Shows success msg for article edit submit"
+      (let [comp (mount {:status {:edit-article {:success-msg "Success!"}}})]
+        (is (= (get comp 5) [:div "Success!"]))))
+    (testing "Renders article-selector with correct vars"
+      (let [props {:selected-article-id ::a
+                   :on-article-id-change ::b
+                   :on-article-id-submit ::c
+                   :get-article! ::d}]
+        (is (= (get-in (mount props) [2 1]) [rc/article-selector props]))))
+    (testing "Don't render article-selector if loading"
+      (is (= (get (mount {:loading? true}) 2) [:div "Loading..."])))
+    (testing "renders errors for article-selector"
+      (let [comp (mount {:status {:id-selection {:errors {::a ::b}}}})]
+        (is (= (get-in comp [2 2])
+               [components-utils/errors-displayer {:errors {::a ::b}}]))))))
 
 (deftest test-article-editor
   (let [mount rc/article-editor]
@@ -95,7 +196,9 @@
          ;; And submits the changes
          (let [out-chan ((get-in (comp-1) [1 :on-edit-article-submit]))]
            ;; put should have been called
-           (is (= @put-article!-args [[(:id factories/article) new-raw-article]]))
+           (is (= @put-article!-args
+                  [[(:id factories/article)
+                    (articles/serialize-article-spec new-raw-article)]]))
            ;; The request returns
            (>! put-article!-chan {:error? false :data {}})
            (is (= (<! out-chan) :done))

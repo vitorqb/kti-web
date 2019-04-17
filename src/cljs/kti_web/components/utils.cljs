@@ -1,4 +1,17 @@
-(ns kti-web.components.utils)
+(ns kti-web.components.utils
+  (:require
+   [kti-web.utils :as utils]))
+
+(defn make-input [{:keys [text type disabled]}]
+  "Makes an input component"
+  (fn [{:keys [value on-change]}]
+    [:div
+     [:span text]
+     [:input {:style {:width 600}
+              :value value
+              :on-change (utils/call-with-val on-change)
+              :type type
+              :disabled (or disabled false)}]]))
 
 (defn submit-button
   ([] (submit-button {:text "Submit!"}))

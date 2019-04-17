@@ -1,7 +1,22 @@
 (ns kti-web.components.utils-test
   (:require
    [cljs.test :refer-macros [is are deftest testing use-fixtures async]]
+   [kti-web.test-utils :as utils]
    [kti-web.components.utils :as rc]))
+
+(deftest test-make-input
+  (let [foo-input (rc/make-input {:text "Foo"})]
+    (testing "Contains span with text"
+      (is (= (get-in (foo-input {}) [1]) [:span "Foo"])))
+    (testing "Binds value to input"
+      (is (= (get-in (foo-input {:value :a}) [2 1 :value]) :a)))
+    (testing "Calls on-change on change"
+      (let [[on-change-args on-change] (utils/args-saver)
+            comp (foo-input {:on-change on-change})]
+        ((get-in comp [2 1 :on-change]) (utils/target-value-event "foo"))
+        (is (= @on-change-args [["foo"]]))))
+    (testing "Disabled"
+      (is (true? (get-in ((rc/make-input {:disabled true})) [2 1 :disabled]))))))
 
 (deftest test-errors-displayer
   (let [mount rc/errors-displayer]

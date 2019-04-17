@@ -6,21 +6,14 @@
    [kti-web.models.articles :as articles]
    [kti-web.components.utils :refer [submit-button] :as components-utils]))
 
-(defn make-input [{:keys [text type]}]
-  "Makes an input component"
-  (fn [{:keys [value on-change]}]
-    [:div
-     [:span text]
-     [:input {:value value
-              :on-change (call-with-val on-change)
-              :type type}]
-     [:div (str "(current value: " value ")")]]))
-
 (def article-creator-inputs--id-captured-reference
-  (make-input {:text "Id Captued Reference" :type "number"}))
-(def article-creator-inputs--description (make-input {:text "Description"}))
-(def article-creator-inputs--tags (make-input {:text "Tags"}))
-(def article-creator-inputs--action-link (make-input {:text "Action Link"}))
+  (components-utils/make-input {:text "Id Captued Reference" :type "number"}))
+(def article-creator-inputs--description
+  (components-utils/make-input {:text "Description"}))
+(def article-creator-inputs--tags
+  (components-utils/make-input {:text "Tags"}))
+(def article-creator-inputs--action-link
+  (components-utils/make-input {:text "Action Link"}))
 
 (defn article-creator-form
   [{:keys [article-spec on-article-spec-update on-article-creation-submit]}]
