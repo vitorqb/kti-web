@@ -1,29 +1,10 @@
 (ns kti-web.components.article-creator
   (:require
-   [clojure.string :as str]
    [reagent.core :as r :refer [atom]]
    [cljs.core.async :refer [chan <! >! put! go] :as async]
    [kti-web.utils :refer [call-with-val call-prevent-default] :as utils]
+   [kti-web.models.articles :as articles]
    [kti-web.components.utils :refer [submit-button] :as components-utils]))
-
-(defn parse-tags [x]
-  "Transforms tags from string to a list of keywords"
-  (if (= x "") [] (->> (str/split x #",") (map str/trim) (map keyword))))
-
-(defn make-parser [k]
-  "Returns a function that knows how to parse a raw input of this tag
-   into it's value"
-  (case k
-    :tags parse-tags
-    :id-captured-reference js/parseInt
-    :action-link #(if (= % "") nil %)
-    identity))
-
-(defn parse-article-spec [x]
-  "Parses an article spec."
-  (->> x
-       (map (fn [[k v]] [k ((make-parser k) v)]))
-       (into {:action-link nil})))
 
 (defn make-input [{:keys [text type]}]
   "Makes an input component"
@@ -74,7 +55,10 @@
         handle-article-creation-submit
         (fn []
           (let [out-chan (async/timeout 3000)
-                resp-chan (-> @state :article-spec parse-article-spec hpost!)]
+                resp-chan (-> @state
+                              :article-spec
+                              articles/parse-article-spec
+                              hpost!)]
             (go
               (let [{:keys [error? data]} (<! resp-chan)]
                 (swap! state assoc :errors (if error? data {}))
