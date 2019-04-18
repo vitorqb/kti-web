@@ -2,12 +2,12 @@
   (:require
    [kti-web.utils :as utils]))
 
-(defn make-input [{:keys [text type disabled]}]
+(defn make-input [{:keys [text type disabled width]}]
   "Makes an input component"
   (fn [{:keys [value on-change]}]
-    [:div
+    [:<>
      [:span text]
-     [:input {:style {:width 600}
+     [:input {:style {:width (or width 600)}
               :value value
               :on-change (utils/call-with-val on-change)
               :type type

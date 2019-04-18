@@ -14,7 +14,8 @@
                          delete-captured-reference!
                          get-article!
                          post-article!
-                         put-article!]]
+                         put-article!
+                         delete-article!]]
    [kti-web.state :refer [token host api-url init-state]]
    [kti-web.components.edit-captured-reference-component
     :refer [edit-captured-ref-comp]]
@@ -71,7 +72,7 @@
       [:h2 "Articles!"]
       [article-creator {:hpost! post-article!}]
       [article-editor {:get-article! get-article! :put-article! put-article!}]
-      [article-deletor {}]
+      [article-deletor {:delete-article! delete-article!}]
       [article-table {}]]]))
 
 (defn host-input-inner [{:keys [value on-change]}]
