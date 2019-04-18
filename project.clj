@@ -83,7 +83,8 @@
                                   [pjstadig/humane-test-output "0.9.0"]
                                   [com.bhauman/figwheel-main "0.2.1-SNAPSHOT"]
                                   [lein-doo "0.1.11"]]
-                   :source-paths ["env/dev/clj" "env/dev/cljs"]
+                   :source-paths ["env/dev/clj" "env/dev/cljs" "test/cljs"]
+                   :resource-paths ["target"]
                    :plugins [[lein-doo "0.1.11"]
                              [cider/cider-nrepl "0.21.0"]
                              [org.clojure/tools.namespace "0.3.0-alpha4"

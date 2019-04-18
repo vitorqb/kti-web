@@ -23,7 +23,7 @@
    (head)
    [:body {:class "body-container"}
     mount-target
-    (include-js "/js/app.js")]))
+    (include-js (if (env :dev) "/cljs-out/dev-main.js" "/js/app.js"))]))
 
 (defn index-handler
   [_request]
