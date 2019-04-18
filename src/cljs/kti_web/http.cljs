@@ -95,3 +95,8 @@
    {:http-fn http/put
     :url (api-url (str "articles/" id))
     :json-params article-spec}))
+
+(defn delete-article! [id]
+  (run-req!
+   {:http-fn http/delete
+    :url (api-url (str "articles/" id))}))
