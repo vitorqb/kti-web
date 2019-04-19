@@ -1,0 +1,4 @@
+{:dev true
+ :port 3333
+ :nrepl-port 7000
+ :database-url "jdbc:sqlite:kti_dev.db"}
