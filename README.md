@@ -24,6 +24,9 @@ lein do clean, run
 
 The application will now be available at [http://localhost:3000](http://localhost:3000).
 
+For connecting to a custom standalone backend, see
+[dockerfiles/kti/Readme.org](dockerfiles/kti/Readme.org)
+
 
 ### Optional development tools
 

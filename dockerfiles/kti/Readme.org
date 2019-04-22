@@ -1,0 +1,31 @@
+* KTI Dockerfiles
+
+  This page contains a dockerfile intended to provide an easy way to
+  start a standalone kti backend for development.
+
+  First, build the image with a specific kti version, like this:
+
+#+begin_src shell
+docker build . --build-arg KTI_VERSION='1.3.1' -t 'kti-web-dev:1.3.1'
+#+end_src
+
+  The release must have a =.jar= file in https://github.com/vitorqb/kti/releases.
+
+  Once the image is built we can run it exposing the port 3333 to our
+  localhost:
+
+#+begin_src shell
+docker run -p3333:3333 --rm --name=kti-web-dev:1.3.1 kti-web-dev:1.3.1
+#+end_src
+
+  To get a token to authenticate, you can use curl:
+
+#+begin_src shell
+curl -H 'Content-Type: application/json' --data '{"email": "a@b.c"}' 127.0.0.1:3333/api/token
+#+end_src
+
+  The token will be printted in the log, which you can recover by doing
+
+#+begin_src shell
+sudo docker logs kti-web-dev | grep -a -o -P 'Your token is: .*'
+#+end_src
