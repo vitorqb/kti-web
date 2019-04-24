@@ -1,35 +1,37 @@
 (ns ^:figwheel-hooks kti-web.core
-  (:require
-   [reagent.core :as r]
-   [reagent.session :as session]
-   [reitit.frontend :as reitit]
-   [clerk.core :as clerk]
-   [accountant.core :as accountant]
-   [cljs.core.async :refer [chan go take! put! <! >!]]
-   [kti-web.local-storage :as local-storage]
-   [kti-web.http :refer [post-captured-reference!
-                         get-captured-reference!
-                         get-captured-references!
-                         put-captured-reference!
-                         delete-captured-reference!
-                         get-article!
-                         post-article!
-                         put-article!
-                         delete-article!]]
-   [kti-web.state :refer [token host api-url init-state]]
-   [kti-web.components.edit-captured-reference-component
-    :refer [edit-captured-ref-comp]]
-   [kti-web.components.article-creator :refer [article-creator]]
-   [kti-web.components.article-editor :refer [article-editor]]
-   [kti-web.components.article-deletor :refer [article-deletor]]
-   [kti-web.components.article-table :refer [article-table]]
-   [kti-web.components.utils :refer [submit-button]]
-   [kti-web.utils :refer [call-with-val call-prevent-default js-alert]
-    :as utils]))
+  (:require [accountant.core :as accountant]
+            [clerk.core :as clerk]
+            [cljs.core.async :refer [<! >! go]]
+            [kti-web.components.article-creator :refer [article-creator]]
+            [kti-web.components.article-deletor :refer [article-deletor]]
+            [kti-web.components.article-editor :refer [article-editor]]
+            [kti-web.components.article-table :refer [article-table]]
+            [kti-web.components.captured-reference-table
+             :refer
+             [captured-refs-table]]
+            [kti-web.components.edit-captured-reference-component
+             :refer
+             [edit-captured-ref-comp]]
+            [kti-web.components.utils :refer [submit-button]]
+            [kti-web.http
+             :refer
+             [delete-article!
+              delete-captured-reference!
+              get-article!
+              get-captured-reference!
+              get-captured-references!
+              post-article!
+              post-captured-reference!
+              put-article!
+              put-captured-reference!]]
+            [kti-web.state :refer [host init-state token]]
+            [kti-web.utils :as utils :refer [call-prevent-default call-with-val]]
+            [reagent.core :as r]
+            [reagent.session :as session]
+            [reitit.frontend :as reitit]))
 
 (declare
  capture-form
- captured-refs-table
  delete-captured-ref-form
  token-input-inner
  host-input-inner)
@@ -120,41 +122,6 @@
                (assoc :on-submit (call-prevent-default handle-submit)
                       :on-change #(swap! state assoc :value %))
                capture-form-inner))))
-
-(defn captured-refs-table-inner [{:keys [loading? refs fn-refresh!]}]
-  (let [headers ["id" "ref" "created at" "classified?"]
-        ref->tr
-        (fn [{:keys [id reference created-at classified]}]
-          [:tr {:key id}
-           [:td id]
-           [:td reference]
-           [:td created-at]
-           [:td (str classified)]])]
-    [:div
-     [:h3 "Captured References Table"]
-     [:button {:on-click fn-refresh!} "Update"]
-     (if loading?
-       [:div "LOADING..."]
-       [:table
-        [:thead [:tr (map (fn [x] [:th {:key x} x]) headers)]]
-        [:tbody (->> refs (sort-by :created-at) reverse (map ref->tr))]])]))
-
-(defn captured-refs-table [{:keys [get! c-done]}]
-  (let [state (r/atom {:loading? true :refs nil})
-        run-get!
-        (fn []
-          (swap! state assoc :loading? true :refs nil)
-          (let [get-chan (get!)]
-            (go
-              (let [{:keys [error? data]} (<! get-chan)]
-                (if error?
-                  (do
-                    (js-alert (str "Error during get: " (:ROOT data)))
-                    (swap! state assoc :loading? false :refs []))
-                  (swap! state assoc :loading? false :refs data))
-                (and c-done (>! c-done 1))))))]
-    (run-get!)
-    #(captured-refs-table-inner (assoc @state :fn-refresh! run-get!))))
 
 (defn delete-captured-ref-form-inner
   [{:keys [ref-id result update-ref-id! delete!]}]

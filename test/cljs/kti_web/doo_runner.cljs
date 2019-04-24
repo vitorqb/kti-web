@@ -8,7 +8,8 @@
             [kti-web.components.utils-test]
             [kti-web.models.articles-test]
             [kti-web.components.article-editor-test]
-            [kti-web.components.article-deletor-test]))
+            [kti-web.components.article-deletor-test]
+            [kti-web.components.captured-reference-table-test]))
 
 (doo-tests 'kti-web.core-test
            'kti-web.http-test
@@ -18,4 +19,5 @@
            'kti-web.components.article-creator-test
            'kti-web.models.articles-test
            'kti-web.components.article-editor-test
-           'kti-web.components.article-deletor-test)
+           'kti-web.components.article-deletor-test
+           'kti-web.components.captured-reference-table-test)
