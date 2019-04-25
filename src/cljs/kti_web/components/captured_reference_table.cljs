@@ -3,14 +3,31 @@
             [kti-web.utils :as utils :refer [js-alert]]
             [reagent.core :as r]))
 
-(defn- captured-reference->tr
-  "Makes a <tr> from a captured reference."
-  [{:keys [id reference created-at classified]}]
-  [:tr {:key id}
-   [:td id]
-   [:td reference]
-   [:td created-at]
-   [:td (str classified)]])
+(def columns
+  "An array of maps describing the table columns."
+  [{:head-text "id"          :fn-get :id}
+   {:head-text "ref"         :fn-get :reference}
+   {:head-text "created at"  :fn-get :created-at}
+   {:head-text "classified?" :fn-get (comp str :classified)}
+   {:head-text "article id"  :fn-get :article-id}])
+
+(defn- make-thead
+  "Prepares a thead for the table, given an array of columns."
+  [cols]
+  (->> cols
+       (map (fn [{:keys [head-text]}] [:th {:key head-text} head-text]))
+       (apply vector :tr)
+       (vector :thead)))
+
+(defn- make-tbody
+  "prepares a tbody for the table, given an array of columns and rows."
+  [cols rows]
+  (->> rows
+       (map (fn [row]
+              (->> cols
+                   (map (fn [{:keys [fn-get]}] [:td (fn-get row)]))
+                   (apply vector :tr))))
+       (apply vector :tbody)))
 
 (defn captured-refs-table-inner
   "Pure component for a table of captured references."
@@ -18,19 +35,16 @@
   (let [headers ["id" "ref" "created at" "classified?"]]
     [:div
      [:h3 "Captured References Table"]
-     [:button {:on-click fn-refresh!} "Update"]
+     [:button {:on-click #(fn-refresh!)} "Update"]
      (if loading?
        [:div "LOADING..."]
        [:table
-        [:thead [:tr (map (fn [x] [:th {:key x} x]) headers)]]
-        [:tbody (->> refs
-                     (sort-by :created-at)
-                     reverse
-                     (map captured-reference->tr))]])]))
+        (make-thead columns)
+        (->> refs (sort-by :created-at) reverse (make-tbody columns))])]))
 
 (def initial-state
   "The initial state for the captured reference table."
-  {:loading true :refs nil})
+  {:loading? true :refs nil})
 
 (defn- reduce-before-get-all-captured-references
   [state]
@@ -58,4 +72,5 @@
                    (swap! state))
               (and c-done (>! c-done 1)))))]
     (run-get!)
-    #(captured-refs-table-inner (assoc @state :fn-refresh! run-get!))))
+    (fn []
+      [captured-refs-table-inner (assoc @state :fn-refresh! run-get!)])))
