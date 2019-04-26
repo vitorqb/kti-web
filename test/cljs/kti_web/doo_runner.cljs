@@ -9,7 +9,10 @@
             [kti-web.models.articles-test]
             [kti-web.components.article-editor-test]
             [kti-web.components.article-deletor-test]
-            [kti-web.components.captured-reference-table-test]))
+            [kti-web.components.captured-reference-table-test]
+            [kti-web.components.review-editor-test]
+            [kti-web.components.review-deletor-test]
+            [kti-web.components.review-creator-test]))
 
 (doo-tests 'kti-web.core-test
            'kti-web.http-test
@@ -20,4 +23,7 @@
            'kti-web.models.articles-test
            'kti-web.components.article-editor-test
            'kti-web.components.article-deletor-test
-           'kti-web.components.captured-reference-table-test)
+           'kti-web.components.captured-reference-table-test
+           'kti-web.components.review-editor-test
+           'kti-web.components.review-deletor-test
+           'kti-web.components.review-creator-test)
