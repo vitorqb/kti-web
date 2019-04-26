@@ -5,6 +5,9 @@
             [kti-web.components.article-creator :refer [article-creator]]
             [kti-web.components.article-deletor :refer [article-deletor]]
             [kti-web.components.article-editor :refer [article-editor]]
+            [kti-web.components.review-creator :refer [review-creator]]
+            [kti-web.components.review-deletor :refer [review-deletor]]
+            [kti-web.components.review-editor :refer [review-editor]]
             [kti-web.components.captured-reference-table
              :refer
              [captured-refs-table]]
@@ -73,7 +76,12 @@
       [:h2 "Articles!"]
       [article-creator {:hpost! post-article!}]
       [article-editor {:get-article! get-article! :put-article! put-article!}]
-      [article-deletor {:delete-article! delete-article!}]]]))
+      [article-deletor {:delete-article! delete-article!}]]
+     [:div
+      [:h2 "Reviews"]
+      [review-creator {}]
+      [review-editor {}]
+      [review-deletor {}]]]))
 
 (defn host-input-inner [{:keys [value on-change]}]
   [:div
