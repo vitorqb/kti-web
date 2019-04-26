@@ -53,6 +53,7 @@
 (defn- reduce-get-all-captured-references-response
   [{:keys [error? data] :as resp}]
   (fn [state]
+    ;; !!!! TODO -> Use error component in utils and not js-alert
     (if error?
       (do
         (js-alert (str "Error during get: " (:ROOT data)))
