@@ -1,7 +1,9 @@
 (ns kti-web.components.select-captured-ref
   (:require
    [cljs.core.async :refer [<! chan go >!]]
-   [kti-web.utils :refer [call-with-val call-prevent-default]]
+   [kti-web.utils
+    :refer [call-with-val call-prevent-default]
+    :refer-macros [go-with-done-chan]]
    [kti-web.components.utils :refer [submit-button]]))
 
 (defn select-captured-ref
@@ -10,11 +12,10 @@
   "A form to select a captured reference."
   (letfn [(handle-submit [e]
             (toggle-loading true)
-            (let [cap-ref-chan (get-captured-ref id-value) out-chan (chan)]
-              (go (on-selection (<! cap-ref-chan))
-                  (toggle-loading false)
-                  (>! out-chan 1))
-              out-chan))]
+            (let [cap-ref-chan (get-captured-ref id-value)]
+              (go-with-done-chan
+               (on-selection (<! cap-ref-chan))
+               (toggle-loading false))))]
     [:div
      [:form {:on-submit (call-prevent-default handle-submit)}
       [:span "Choose an id: "]

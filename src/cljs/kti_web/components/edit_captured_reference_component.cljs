@@ -4,7 +4,9 @@
    [reagent.core :as r]
    [kti-web.components.utils :refer [submit-button call-prevent-default]]
    [kti-web.components.select-captured-ref :refer [select-captured-ref]]
-   [kti-web.utils :refer [call-prevent-default call-with-val to-str]]))
+   [kti-web.utils
+    :refer [call-prevent-default call-with-val to-str]
+    :refer-macros [go-with-done-chan]]))
 
 (defn captured-ref-inputs--id [{:keys [id]}]
   [:div [:span "Id"] [:input {:value (or id "") :disabled true}]])
@@ -67,14 +69,12 @@
         loading? (r/atom false)
         handle-submit
         (fn []
-          (let [ret-chan (timeout 3000)
-                resp-chan (hput! @selected-id-value @editted-cap-ref)]
-            (go (let [{:keys [error? data]} (<! resp-chan)]
-                  (reset! status (if error?
-                                   (str "Error: " (to-str data))
-                                   "Success!"))
-                  (>! ret-chan :done)))
-            ret-chan))
+          (let [resp-chan (hput! @selected-id-value @editted-cap-ref)]
+            (go-with-done-chan
+             (let [{:keys [error? data]} (<! resp-chan)]
+               (reset! status (if error?
+                                (str "Error: " (to-str data))
+                                "Success!"))))))
         handle-cap-ref-selection
         (fn [{:keys [error? data]}]
           (reset! editted-cap-ref nil)

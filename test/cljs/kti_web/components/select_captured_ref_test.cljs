@@ -57,7 +57,7 @@
                ;; The response comes from the server
                (>! get-cap-ref-chan {})
                ;; The processing for the component ends
-               (is (= (<! out-chan) 1))
+               (is (= (<! out-chan) :done))
                ;; And toggle-loading has been called again with false
                (is (= @toggle-loading-args [[true] [false]]))
                (done))))))
