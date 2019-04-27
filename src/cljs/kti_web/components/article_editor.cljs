@@ -1,7 +1,7 @@
 (ns kti-web.components.article-editor
   (:require
    [reagent.core :as r :refer [atom]]
-   [kti-web.utils :as utils]
+   [kti-web.utils :as utils :refer-macros [go-with-done-chan]]
    [kti-web.models.articles :as articles]
    [kti-web.components.utils :as components-utils]
    [cljs.core.async :refer [chan <! >! put! go] :as async]))
@@ -128,31 +128,25 @@
         handle-article-id-submit
         (fn []
           (swap! state reset-state-for-id-submit)
-          (let [out-chan (async/timeout 3000)
-                resp-chan (get-article! (:selected-article-id @state))]
-            (go
-              (let [{:keys [error? data]} (<! resp-chan)]
-                (swap! state (if error?
-                               (set-state-on-id-submit-error data)
-                               (set-state-on-id-submit-success data)))
-                (>! out-chan :done)))
-            out-chan))
+          (let [resp-chan (get-article! (:selected-article-id @state))]
+            (go-with-done-chan
+             (let [{:keys [error? data]} (<! resp-chan)]
+               (swap! state (if error?
+                              (set-state-on-id-submit-error data)
+                              (set-state-on-id-submit-success data)))))))
         handle-edit-article-submit
         (fn []
           (swap! state reset-state-for-article-submit)
-          (let [out-chan (async/timeout 3000)
-                resp-chan
+          (let [resp-chan
                 (let [{:keys [raw-editted-article-id raw-editted-article]} @state]
                   (put-article!
                    raw-editted-article-id
                    (articles/serialize-article-spec raw-editted-article)))]
-            (go
-              (let [{:keys [error? data]} (<! resp-chan)]
-                (swap! state (if error?
-                               (set-state-on-edit-submit-error data)
-                               set-state-on-edit-submit-success))
-                (>! out-chan :done)))
-            out-chan))]
+            (go-with-done-chan
+             (let [{:keys [error? data]} (<! resp-chan)]
+               (swap! state (if error?
+                              (set-state-on-edit-submit-error data)
+                              set-state-on-edit-submit-success))))))]
     (fn []
       [article-editor--inner
        (merge

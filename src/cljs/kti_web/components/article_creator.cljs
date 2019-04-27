@@ -2,7 +2,10 @@
   (:require
    [reagent.core :as r :refer [atom]]
    [cljs.core.async :refer [chan <! >! put! go] :as async]
-   [kti-web.utils :refer [call-with-val call-prevent-default] :as utils]
+   [kti-web.utils
+    :refer [call-with-val call-prevent-default]
+    :refer-macros [go-with-done-chan]
+    :as utils]
    [kti-web.models.articles :as articles]
    [kti-web.components.utils :refer [submit-button] :as components-utils]))
 
@@ -47,16 +50,13 @@
   (let [state (r/atom {:article-spec {} :errors {}})
         handle-article-creation-submit
         (fn []
-          (let [out-chan (async/timeout 3000)
-                resp-chan (-> @state
+          (let [resp-chan (-> @state
                               :article-spec
                               articles/serialize-article-spec
                               hpost!)]
-            (go
-              (let [{:keys [error? data]} (<! resp-chan)]
-                (swap! state assoc :errors (if error? data {}))
-                (>! out-chan :done)))
-            out-chan))]
+            (go-with-done-chan
+             (let [{:keys [error? data]} (<! resp-chan)]
+               (swap! state assoc :errors (if error? data {}))))))]
     (fn []
       [article-creator--inner
        {:article-spec (:article-spec @state)
