@@ -12,7 +12,8 @@
             [kti-web.components.captured-reference-table-test]
             [kti-web.components.review-editor-test]
             [kti-web.components.review-deletor-test]
-            [kti-web.components.review-creator-test]))
+            [kti-web.components.review-creator-test]
+            [kti-web.models.reviews-test]))
 
 (doo-tests 'kti-web.core-test
            'kti-web.http-test
@@ -26,4 +27,5 @@
            'kti-web.components.captured-reference-table-test
            'kti-web.components.review-editor-test
            'kti-web.components.review-deletor-test
-           'kti-web.components.review-creator-test)
+           'kti-web.components.review-creator-test
+           'kti-web.models.reviews-test)
