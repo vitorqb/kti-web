@@ -53,6 +53,17 @@
    :tags ["tag1" "tag2"]
    :action-link "www.gihub.com/vitorqb"})
 
+(def review-raw-spec
+  {:id-article 12
+   :feedback-text "The Foo"
+   :status "in-progress"})
+
+(def review
+  {:id 823
+   :id-article 121
+   :feedback-text "It rocks!"
+   :status "completed"})
+
 (defn ok-response
   "Factory for responses with 200 and some data"
   [body]
