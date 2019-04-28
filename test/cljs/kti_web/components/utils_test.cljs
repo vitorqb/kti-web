@@ -4,6 +4,22 @@
    [kti-web.test-utils :as utils]
    [kti-web.components.utils :as rc]))
 
+(deftest test-select
+  (let [mount rc/select]
+    (testing "Initializes with correct options"
+      (let [options ["foo" "bar"] comp (mount {:options options})]
+        ;; Select accepts {:label x :value x}
+        (is (= (get-in comp [1 :options])
+               (map #(hash-map :value % :label %) options)))))
+    (testing "Initializes with correct value"
+      (let [comp (mount {:value "foo"})]
+        (is (= (get-in comp [1 :value]) {:value "foo" :label "foo"}))))
+    (testing "Calls on-change on change"
+      (let [[args fun] (utils/args-saver)
+            comp (mount {:options ["foo"] :on-change fun})]
+        ((get-in comp [1 :on-change]) {"value" "foo" "label" "foo"})
+        (is (= @args [["foo"]]))))))
+
 (deftest test-make-input
   (let [foo-input (rc/make-input {:text "Foo"})]
     (testing "Contains span with text"

@@ -20,7 +20,8 @@
                   :exclusions [org.clojure/tools.reader]]
                  [binaryage/oops "0.7.0"]
                  [cljs-http "0.1.46"]
-                 [pjstadig/humane-test-output "0.9.0"]]
+                 [pjstadig/humane-test-output "0.9.0"]
+                 [cljsjs/react-select "2.4.3-0"]]
 
   :plugins [[lein-environ "1.1.0"]
             [lein-cljsbuild "1.1.7"]
