@@ -71,3 +71,8 @@
                 [:ul {:key "d"}
                  [:li "d"]
                  [:ul [:li "Baz"]]])])))))
+
+(deftest test-success-message-displayer
+  (let [mount rc/success-message-displayer]
+    (is (= (mount {:status {:success-msg "foo"}})
+           [:div.success-message {:style {:background-color "green"}} "foo"]))))

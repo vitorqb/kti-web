@@ -53,11 +53,16 @@
 
 (deftest test-review-creator-inner
   (let [mount rc/review-creator-inner
-        get-err-comp #(get % 3)]
+        get-err-comp #(get % 3)
+        get-success-msg-comp #(get % 4)]
     (testing "Set's error msg"
-      (let [specs {:status {:errors ::a}}]
-        (is (= (-> specs mount get-err-comp)
-             [components-utils/errors-displayer specs]))))))
+      (let [status {:status {:errors ::a}}]
+      (is (= (-> status mount get-err-comp)
+             [components-utils/errors-displayer status]))))
+    (testing "Set's success msg"
+      (let [specs {:status {:success-msg ::a}}]
+      (is (= (-> specs mount get-success-msg-comp)
+             [components-utils/success-message-displayer specs]))))))
 
 (deftest test-reduce-before-review-creation-submit
   (is (= (rc/reduce-before-review-creation-submit {})

@@ -50,8 +50,9 @@
         (is (= (get comp 4)
                [components-utils/errors-displayer status]))))
     (testing "Display success msg"
-      (let [comp (mount {:status {:success-msg "FOO"}})]
-        (is (= (get comp 5) [:div "FOO"]))))
+      (let [props {:status {:success-msg "FOO"}}
+            comp (mount props)]
+        (is (= (get comp 5) [components-utils/success-message-displayer props]))))
     (testing "Loading..."
       (let [comp (mount {:loading? true})]
         (is (= (get comp 3) [:div "Loading..."]))))))

@@ -95,8 +95,10 @@
       (let [comp (mount {:loading? false :raw-editted-article nil})]
         (is (= (get comp 3) [:div]))))
     (testing "Shows success msg for article edit submit"
-      (let [comp (mount {:status {:edit-article {:success-msg "Success!"}}})]
-        (is (= (get comp 5) [:div "Success!"]))))
+      (let [comp (mount {:status {:edit-article {:success-msg ::a}}})]
+        (is (= (get comp 5)
+               [components-utils/success-message-displayer
+                {:status {:success-msg ::a}}]))))
     (testing "Renders article-selector with correct vars"
       (let [props {:selected-article-id ::a
                    :on-article-id-change ::b

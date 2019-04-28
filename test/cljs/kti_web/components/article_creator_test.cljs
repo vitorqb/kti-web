@@ -60,7 +60,11 @@
                                          :on-article-creation-submit :c}]))))
     (testing "Renders error component"
       (is (= [components-utils/errors-displayer {:status {:errors ::foo}}]
-             (get (mount {:errors ::foo}) 2))))))
+             (get (mount {:errors ::foo}) 2))))
+    (testing "Renders success-message component"
+      (let [success-msg {:success-msg ::foo}]
+        (is (= (get (mount success-msg) 3)
+               [components-utils/success-message-displayer {:status success-msg}]))))))
 
 (deftest test-article-creator
   (let [mount rc/article-creator
@@ -89,9 +93,12 @@
       (async done
              (go
                ;; Simulates the response from the server
-               (>! hpost!-chan (assoc article-spec :id 9))
+               (>! hpost!-chan {:data (assoc article-spec :id 9)})
                ;; And sees that post! is done
                (is (= (<! out-chan) :done))
+               ;; And the success-msg is set
+               (is (= (get-in (comp-1) [1 :success-msg])
+                      (rc/make-success-msg {:id 9})))
                (done))))))
 
 (deftest test-article-creator--sets-errors

@@ -18,6 +18,8 @@
 (def article-creator-inputs--action-link
   (components-utils/make-input {:text "Action Link"}))
 
+(defn make-success-msg [{:keys [id]}] (str "Created article with id " id))
+
 (defn article-creator-form
   [{:keys [article-spec on-article-spec-update on-article-creation-submit]}]
   (letfn [(change-handler [k] #(on-article-spec-update (assoc article-spec k %)))]
@@ -38,16 +40,18 @@
      [submit-button]]))
 
 (defn article-creator--inner
-  [{:keys [article-spec on-article-spec-update on-article-creation-submit errors]}]
+  [{:keys [article-spec on-article-spec-update on-article-creation-submit errors
+           success-msg]}]
   [:div
    [article-creator-form
     {:article-spec article-spec
      :on-article-spec-update on-article-spec-update
      :on-article-creation-submit on-article-creation-submit}]
-   [components-utils/errors-displayer {:status {:errors errors}}]])
+   [components-utils/errors-displayer {:status {:errors errors}}]
+   [components-utils/success-message-displayer {:status {:success-msg success-msg}}]])
 
 (defn article-creator [{:keys [hpost!]}]
-  (let [state (r/atom {:article-spec {} :errors {}})
+  (let [state (r/atom {:article-spec {} :errors {} :success-msg nil})
         handle-article-creation-submit
         (fn []
           (let [resp-chan (-> @state
@@ -55,11 +59,15 @@
                               articles/serialize-article-spec
                               hpost!)]
             (go-with-done-chan
+             (swap! state dissoc :errors :success-msg)
              (let [{:keys [error? data]} (<! resp-chan)]
-               (swap! state assoc :errors (if error? data {}))))))]
+               (swap! state assoc
+                      :errors (when error? data)
+                      :success-msg (when-not error? (make-success-msg data)))))))]
     (fn []
       [article-creator--inner
        {:article-spec (:article-spec @state)
         :errors (:errors @state)
+        :success-msg (:success-msg @state)
         :on-article-spec-update #(swap! state assoc :article-spec %)
         :on-article-creation-submit handle-article-creation-submit}])))
