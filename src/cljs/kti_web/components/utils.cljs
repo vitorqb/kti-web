@@ -1,9 +1,28 @@
 (ns kti-web.components.utils
   (:require
-   [kti-web.utils :as utils]))
+   [kti-web.utils :as utils]
+   [reagent.core :as r]
+   [cljsjs.react-select]))
 
-(defn make-input [{:keys [text type disabled width]}]
+(defn select
+  "Wrapper around react-select providing a select component"
+  [{:keys [value on-change options]}]
+  [(r/adapt-react-class js/Select)
+   {:value     {:value value :label value}
+    :options   (map (fn [x] {:value x :label x}) options)
+    :on-change #(-> % js->clj (get "value") on-change)}])
+
+(defn make-select
+  "Makes a select component. Options must be an array of strings."
+  [{:keys [text options]}]
+  (fn [{:keys [value on-change]}]
+    [:<>
+     [:span text]
+     [select {:options options :on-change on-change :value value}]]))
+
+(defn make-input
   "Makes an input component"
+  [{:keys [text type disabled width]}]
   (fn [{:keys [value on-change]}]
     [:<>
      [:span text]

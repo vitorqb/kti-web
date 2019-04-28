@@ -100,3 +100,9 @@
   (run-req!
    {:http-fn http/delete
     :url (api-url (str "articles/" id))}))
+
+(defn post-review! [spec]
+  (run-req!
+   {:http-fn http/post
+    :url (api-url "reviews")
+    :json-params spec}))

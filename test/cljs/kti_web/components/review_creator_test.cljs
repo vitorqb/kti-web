@@ -16,6 +16,48 @@
   (get-in c [1 k]))
 
 ;; Tests
+(deftest test-review-creator-form
+  (let [mount rc/review-creator-form]
+    (testing "Changing id-article"
+      (let [id 9
+            new-id 8
+            [args fun] (utils/args-saver)
+            comp (mount {:review-raw-spec {:id-article id}
+                         :on-review-raw-spec-change fun})]
+        (is (= (get-in comp [2 1 :value]) id))
+        ((get-in comp [2 1 :on-change]) new-id)
+        (is (= @args [[{:id-article new-id}]]))))
+    (testing "Changing feedback-text"
+      (let [old-text "Foo"
+            new-text "Bar"
+            [args fun] (utils/args-saver)
+            comp (mount {:review-raw-spec {::a ::b :feedback-text old-text}
+                         :on-review-raw-spec-change fun})]
+        (is (= (get-in comp [3 1 :value]) old-text))
+        ((get-in comp [3 1 :on-change]) new-text)
+        (is (= @args [[{::a ::b :feedback-text new-text}]]))))
+    (testing "Changing status"
+      (let [old-status "in-progress"
+            new-status "completed"
+            [args fun] (utils/args-saver)
+            comp (mount {:review-raw-spec {:status old-status}
+                         :on-review-raw-spec-change fun})]
+        (is (= (get-in comp [4 1 :value]) old-status))
+        ((get-in comp [4 1 :on-change]) new-status)
+        (is (= @args [[{:status new-status}]]))))
+    (testing "Submitting"
+      (let [[args fun] (utils/args-saver)
+            comp (mount {:on-review-creation-submit fun})]
+        ((get-in comp [1 :on-submit]) (utils/prevent-default-event))
+        (is (= @args [[]]))))))
+
+(deftest test-review-creator-inner
+  (let [mount rc/review-creator-inner
+        get-err-comp #(get % 3)]
+    (testing "Set's error msg"
+      (is (= (-> {:status {:errors ::a}} mount get-err-comp)
+             [components-utils/errors-displayer {:errors ::a}])))))
+
 (deftest test-reduce-before-review-creation-submit
   (is (= (rc/reduce-before-review-creation-submit {})
          {:status {} :loading? true})))
@@ -69,4 +111,22 @@
          ;; And we see the success-msg
          (is (= (get-prop (comp1) :status)
                 {:success-msg (rc/make-success-msg factories/review)}))
+         (done))))))
+
+(deftest test-review-creator--submit-with-error
+  (let [[args args-saver] (utils/args-saver)
+        post!-chan (async/timeout 3000)
+        post! #(do (args-saver %&) post!-chan)
+        comp1 (rc/review-creator {:post-review! post!})
+        get-prop #(get-in (comp1) [1 %])]
+    (async
+     done
+     (go
+       ;; Makes a request
+       (let [ret-chan ((get-prop :on-review-creation-submit))]
+         ;; Request returns an error
+         (>! post!-chan {:error? true :data {::a ::b}})
+         (is (= (<! ret-chan) :done))
+         ;; Error is passed to review-creator-inner
+         (is (= (get-prop :status) {:errors {::a ::b}}))
          (done))))))

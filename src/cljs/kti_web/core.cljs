@@ -25,7 +25,8 @@
               post-article!
               post-captured-reference!
               put-article!
-              put-captured-reference!]]
+              put-captured-reference!
+              post-review!]]
             [kti-web.state :refer [host init-state token]]
             [kti-web.utils :as utils :refer [call-prevent-default call-with-val]]
             [reagent.core :as r]
@@ -79,7 +80,7 @@
       [article-deletor {:delete-article! delete-article!}]]
      [:div
       [:h2 "Reviews"]
-      [review-creator {}]
+      [review-creator {:post-review! post-review!}]
       [review-editor {}]
       [review-deletor {}]]]))
 

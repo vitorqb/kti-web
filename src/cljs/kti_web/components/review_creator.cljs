@@ -1,14 +1,41 @@
 (ns kti-web.components.review-creator
   (:require
-   [kti-web.utils :refer-macros [go-with-done-chan]]
+   [kti-web.utils :refer-macros [go-with-done-chan] :as utils]
+   [kti-web.components.utils
+    :as component-utils
+    :refer [make-input make-select]]
    [kti-web.models.reviews :as review-models]
+   [kti-web.components.utils :as components-utils]
    [reagent.core :as r :refer [atom]]
    [cljs.core.async :as async :refer [>! <! go]]))
 
+(def inputs
+  {:id-article    (make-input  {:text "Article Id" :type "number"})
+   :feedback-text (make-input  {:text "Feedback Text" :type "text"})
+   :status        (make-select {:text "Status"
+                                :options review-models/raw-status})})
+
+(defn review-creator-form
+  "Pure form component for creation of a review."
+  [{:keys [review-raw-spec on-review-raw-spec-change on-review-creation-submit]}]
+  (let [handle-change
+        (fn [k v] (on-review-raw-spec-change (assoc review-raw-spec k v)))
+        render-input
+        (fn [k]
+          [(inputs k) {:value (k review-raw-spec) :on-change #(handle-change k %)}])]
+    [:form {:on-submit (utils/call-prevent-default #(on-review-creation-submit))}
+     (render-input :id-article)
+     (render-input :feedback-text)
+     (render-input :status)
+     [component-utils/submit-button]]))
+
 (defn review-creator-inner
   "Pure component for review creation."
-  [specs]
-  [:span "NOT IMPLEMENTED"])
+  [{{:keys [errors]} :status :as specs}]
+  [:div
+   [:h3 "Create Review"]
+   [review-creator-form specs]
+   [components-utils/errors-displayer {:errors errors}]])
 
 (def initial-state
   {:loading? false
