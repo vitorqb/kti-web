@@ -49,6 +49,6 @@
 
 (defn errors-displayer
   "Component responsible for rendering a map of errors."
-  [{:keys [errors]}]
+  [{{errors :errors} :status}]
   [:div.errors-displayer
    (map errors-displayer-tree (into [] errors))])

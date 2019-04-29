@@ -45,9 +45,10 @@
         ((get-in comp [3 1 :on-submit]) (utils/prevent-default-event))
         (is (= @args [[]]))))
     (testing "Display errors"
-      (let [comp (mount {:status {:errors {::a ::b}}})]
+      (let [status {:status {:errors {::a ::b}}}
+            comp (mount status)]
         (is (= (get comp 4)
-               [components-utils/errors-displayer {:errors {::a ::b}}]))))
+               [components-utils/errors-displayer status]))))
     (testing "Display success msg"
       (let [comp (mount {:status {:success-msg "FOO"}})]
         (is (= (get comp 5) [:div "FOO"]))))

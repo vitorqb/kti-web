@@ -84,9 +84,10 @@
                          :raw-editted-article {:a :b}})]
         (is (= (get-in comp [3 1 :on-edit-article-submit]) ::foo))))
     (testing "Shows error-displayer for article editting"
-      (let [comp (mount {:status {:edit-article {:errors {::foo ::bar}}}})]
+      (let [errors {:errors {::foo ::bar}}
+            comp (mount {:status {:edit-article errors}})]
         (is (= (get comp 4)
-               [components-utils/errors-displayer {:errors {::foo ::bar}}]))))
+               [components-utils/errors-displayer {:status errors}]))))
     (testing "Don't show article-editor-form if loading"
       (let [comp (mount {:loading? true :raw-editted-article {::a ::b}})]
         (is (= (get comp 3) [:div "Loading..."]))))
@@ -105,9 +106,10 @@
     (testing "Don't render article-selector if loading"
       (is (= (get (mount {:loading? true}) 2) [:div "Loading..."])))
     (testing "renders errors for article-selector"
-      (let [comp (mount {:status {:id-selection {:errors {::a ::b}}}})]
+      (let [status {:errors {::a ::b}}
+            comp (mount {:status {:id-selection status}})]
         (is (= (get-in comp [2 2])
-               [components-utils/errors-displayer {:errors {::a ::b}}]))))))
+               [components-utils/errors-displayer {:status status}]))))))
 
 (deftest test-article-editor
   (let [mount rc/article-editor]

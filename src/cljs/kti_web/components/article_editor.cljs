@@ -53,7 +53,7 @@
                                             :on-article-id-submit
                                             :get-article!])]
       [components-utils/errors-displayer
-       {:errors (get-in props [:status :id-selection :errors])}]])
+       {:status (get-in props [:status :id-selection])}]])
    (cond
      loading? [:div "Loading..."]
      raw-editted-article
@@ -63,7 +63,7 @@
                                               :on-edit-article-submit])]
      true [:div])
    [components-utils/errors-displayer
-    {:errors (get-in props [:status :edit-article :errors])}]
+    {:status (get-in props [:status :edit-article])}]
    [:div (get-in props [:status :edit-article :success-msg] "")]])
 
 (defn reset-state-for-id-submit

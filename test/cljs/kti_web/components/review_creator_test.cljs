@@ -55,8 +55,9 @@
   (let [mount rc/review-creator-inner
         get-err-comp #(get % 3)]
     (testing "Set's error msg"
-      (is (= (-> {:status {:errors ::a}} mount get-err-comp)
-             [components-utils/errors-displayer {:errors ::a}])))))
+      (let [specs {:status {:errors ::a}}]
+        (is (= (-> specs mount get-err-comp)
+             [components-utils/errors-displayer specs]))))))
 
 (deftest test-reduce-before-review-creation-submit
   (is (= (rc/reduce-before-review-creation-submit {})

@@ -59,7 +59,7 @@
                                          :on-article-spec-update :b
                                          :on-article-creation-submit :c}]))))
     (testing "Renders error component"
-      (is (= [components-utils/errors-displayer {:errors ::foo}]
+      (is (= [components-utils/errors-displayer {:status {:errors ::foo}}]
              (get (mount {:errors ::foo}) 2))))))
 
 (deftest test-article-creator
