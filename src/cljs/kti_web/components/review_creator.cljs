@@ -35,7 +35,7 @@
   [:div
    [:h3 "Create Review"]
    [review-creator-form specs]
-   [components-utils/errors-displayer {:errors errors}]])
+   [components-utils/errors-displayer specs]])
 
 (def initial-state
   {:loading? false

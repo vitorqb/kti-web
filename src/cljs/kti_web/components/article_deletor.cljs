@@ -18,7 +18,8 @@
 (defn article-deletor--inner
   "Pure component for article deletion"
   [{:keys [delete-article-id on-delete-article-id-change
-           on-delete-article-id-submit status loading?]}]
+           on-delete-article-id-submit status loading?]
+    :as specs}]
   [:div {}
    [:h3 "Delete Article"]
    (if loading?
@@ -28,7 +29,7 @@
        {:value delete-article-id
         :on-change on-delete-article-id-change}]
       [components-utils/submit-button]])
-     [components-utils/errors-displayer (select-keys status [:errors])]
+     [components-utils/errors-displayer specs]
      [:div (:success-msg status)]])
 
 (defn make-success-msg

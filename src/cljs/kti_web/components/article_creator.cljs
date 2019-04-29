@@ -44,7 +44,7 @@
     {:article-spec article-spec
      :on-article-spec-update on-article-spec-update
      :on-article-creation-submit on-article-creation-submit}]
-   [components-utils/errors-displayer {:errors errors}]])
+   [components-utils/errors-displayer {:status {:errors errors}}]])
 
 (defn article-creator [{:keys [hpost!]}]
   (let [state (r/atom {:article-spec {} :errors {}})

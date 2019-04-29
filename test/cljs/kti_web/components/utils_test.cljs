@@ -37,11 +37,12 @@
 (deftest test-errors-displayer
   (let [mount rc/errors-displayer]
     (testing "Don't show if errors is nil or {}"
-      (are [errors] (is (= [:div.errors-displayer ()] (mount {:errors errors})))
+      (are [errors]
+          (is (= [:div.errors-displayer ()] (mount {:status {:errors errors}})))
         nil {}))
     (testing "Shows errors otherwise"
       (let [errors {:ROOT "Foo" :one "Bar" :two {:three "Baz"}}]
-        (is (= (mount {:errors errors})
+        (is (= (mount {:status {:errors errors}})
                [:div.errors-displayer
                 '([:ul {:key "ROOT"}
                    [:li "ROOT"]
