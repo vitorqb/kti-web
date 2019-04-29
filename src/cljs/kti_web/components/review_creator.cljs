@@ -31,11 +31,12 @@
 
 (defn review-creator-inner
   "Pure component for review creation."
-  [{{:keys [errors]} :status :as specs}]
+  [specs]
   [:div
    [:h3 "Create Review"]
    [review-creator-form specs]
-   [components-utils/errors-displayer specs]])
+   [components-utils/errors-displayer specs]
+   [components-utils/success-message-displayer specs]])
 
 (def initial-state
   {:loading? false

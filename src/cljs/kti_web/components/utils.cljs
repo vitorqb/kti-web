@@ -52,3 +52,8 @@
   [{{errors :errors} :status}]
   [:div.errors-displayer
    (map errors-displayer-tree (into [] errors))])
+
+(defn success-message-displayer
+  "Component responsible for rendering a success msg."
+  [{{success-msg :success-msg} :status}]
+  [:div.success-message {:style {:background-color "green"}} success-msg])

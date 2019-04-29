@@ -48,23 +48,17 @@
    (if loading?
      [:div "Loading..."]
      [:div
-      [article-selector (select-keys props [:selected-article-id
-                                            :on-article-id-change
-                                            :on-article-id-submit
-                                            :get-article!])]
+      [article-selector props]
       [components-utils/errors-displayer
        {:status (get-in props [:status :id-selection])}]])
    (cond
-     loading? [:div "Loading..."]
-     raw-editted-article
-     [article-editor-form (select-keys props [:raw-editted-article
-                                              :raw-editted-article-id
-                                              :on-raw-editted-article-change
-                                              :on-edit-article-submit])]
-     true [:div])
+     loading?            [:div "Loading..."]
+     raw-editted-article [article-editor-form props]
+     true                [:div])
    [components-utils/errors-displayer
     {:status (get-in props [:status :edit-article])}]
-   [:div (get-in props [:status :edit-article :success-msg] "")]])
+   [components-utils/success-message-displayer
+    {:status (get-in props [:status :edit-article])}]])
 
 (defn reset-state-for-id-submit
   "Resets an state map for an id submit"
