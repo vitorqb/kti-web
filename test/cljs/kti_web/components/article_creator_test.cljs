@@ -59,12 +59,12 @@
                                          :on-article-spec-update :b
                                          :on-article-creation-submit :c}]))))
     (testing "Renders error component"
-      (is (= [components-utils/errors-displayer {:status {:errors ::foo}}]
-             (get (mount {:errors ::foo}) 2))))
+      (let [props {:status {:errors ::foo}}]
+        (is (= [components-utils/errors-displayer props] (get (mount props) 2)))))
     (testing "Renders success-message component"
-      (let [success-msg {:success-msg ::foo}]
-        (is (= (get (mount success-msg) 3)
-               [components-utils/success-message-displayer {:status success-msg}]))))))
+      (let [props {:status {:success-msg ::foo}}]
+        (is (= (get (mount props) 3)
+               [components-utils/success-message-displayer props]))))))
 
 (deftest test-article-creator
   (let [mount rc/article-creator
@@ -97,8 +97,8 @@
                ;; And sees that post! is done
                (is (= (<! out-chan) :done))
                ;; And the success-msg is set
-               (is (= (get-in (comp-1) [1 :success-msg])
-                      (rc/make-success-msg {:id 9})))
+               (is (= (get-in (comp-1) [1 :status])
+                      {:success-msg (rc/make-success-msg {:id 9})}))
                (done))))))
 
 (deftest test-article-creator--sets-errors
@@ -117,5 +117,5 @@
                (>! hpost!-chan (http/parse-response http-resp-err))
                (is (= :done (<! out-chan)))
                ;; The error is set on the inner
-               (is (= {:foo "Bar"} (get-in (comp-1) [1 :errors])))
+               (is (= {:errors {:foo "Bar"}} (get-in (comp-1) [1 :status])))
                (done))))))

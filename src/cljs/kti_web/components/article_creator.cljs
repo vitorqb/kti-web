@@ -40,18 +40,17 @@
      [submit-button]]))
 
 (defn article-creator--inner
-  [{:keys [article-spec on-article-spec-update on-article-creation-submit errors
-           success-msg]}]
+  [{:keys [article-spec on-article-spec-update on-article-creation-submit] :as props}]
   [:div
    [article-creator-form
     {:article-spec article-spec
      :on-article-spec-update on-article-spec-update
      :on-article-creation-submit on-article-creation-submit}]
-   [components-utils/errors-displayer {:status {:errors errors}}]
-   [components-utils/success-message-displayer {:status {:success-msg success-msg}}]])
+   [components-utils/errors-displayer props]
+   [components-utils/success-message-displayer props]])
 
 (defn article-creator [{:keys [hpost!]}]
-  (let [state (r/atom {:article-spec {} :errors {} :success-msg nil})
+  (let [state (r/atom {:article-spec {} :status {}})
         handle-article-creation-submit
         (fn []
           (let [resp-chan (-> @state
@@ -59,15 +58,16 @@
                               articles/serialize-article-spec
                               hpost!)]
             (go-with-done-chan
-             (swap! state dissoc :errors :success-msg)
+             (swap! state assoc :status {})
              (let [{:keys [error? data]} (<! resp-chan)]
-               (swap! state assoc
-                      :errors (when error? data)
-                      :success-msg (when-not error? (make-success-msg data)))))))]
+               (swap! state assoc :status
+                      (if error?
+                        {:errors data}
+                        {:success-msg (make-success-msg data)}))))))]
     (fn []
-      [article-creator--inner
-       {:article-spec (:article-spec @state)
-        :errors (:errors @state)
-        :success-msg (:success-msg @state)
-        :on-article-spec-update #(swap! state assoc :article-spec %)
-        :on-article-creation-submit handle-article-creation-submit}])))
+      (let [{:keys [article-spec status]} @state]
+        [article-creator--inner
+         {:article-spec article-spec
+          :status       status
+          :on-article-spec-update #(swap! state assoc :article-spec %)
+          :on-article-creation-submit handle-article-creation-submit}]))))
