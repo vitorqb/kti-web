@@ -17,17 +17,20 @@
 
 (defn review-creator-form
   "Pure form component for creation of a review."
-  [{:keys [review-raw-spec on-review-raw-spec-change on-review-creation-submit]}]
+  [{:keys [review-raw-spec on-review-raw-spec-change on-review-creation-submit
+           loading?]}]
   (let [handle-change
         (fn [k v] (on-review-raw-spec-change (assoc review-raw-spec k v)))
         render-input
         (fn [k]
-          [(inputs k) {:value (k review-raw-spec) :on-change #(handle-change k %)}])]
+          [(inputs k) {:value (k review-raw-spec)
+                       :on-change #(handle-change k %)
+                       :temp-disabled loading?}])]
     [:form {:on-submit (utils/call-prevent-default #(on-review-creation-submit))}
      (render-input :id-article)
      (render-input :feedback-text)
      (render-input :status)
-     [component-utils/submit-button]]))
+     [component-utils/submit-button {:disabled loading?}]]))
 
 (defn review-creator-inner
   "Pure component for review creation."

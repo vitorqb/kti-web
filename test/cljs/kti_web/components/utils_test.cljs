@@ -18,10 +18,29 @@
       (let [[args fun] (utils/args-saver)
             comp (mount {:options ["foo"] :on-change fun})]
         ((get-in comp [1 :on-change]) {"value" "foo" "label" "foo"})
-        (is (= @args [["foo"]]))))))
+        (is (= @args [["foo"]]))))
+    (testing "Passes perm-disabled option"
+      (let [disabled-comp (mount {:disabled true})
+            normal-comp   (mount {:disabled false})]
+        (is (true? (get-in disabled-comp [1 :isDisabled])))
+        (is (false? (get-in normal-comp [1 :isDisabled])))))))
+
+(deftest test-make-select
+  (let [get-disabled-prop #(get-in % [2 1 :disabled])]
+  (testing "Permanently disabled"
+    (are [f props] (f (get-disabled-prop ((rc/make-select props))))
+      false? {}
+      false? {:perm-disabled false}
+      true?  {:perm-disabled true}))
+  (testing "Temporarily disabled"
+    (are [f props] (f (get-disabled-prop ((rc/make-select {}) props)))
+      false? {}
+      false? {:temp-disabled false}
+      true?  {:temp-disabled true}))))
 
 (deftest test-make-input
-  (let [foo-input (rc/make-input {:text "Foo"})]
+  (let [foo-input (rc/make-input {:text "Foo"})
+        get-disabled-prop #(get-in % [2 1 :disabled])]
     (testing "Contains span with text"
       (is (= (get-in (foo-input {}) [1]) [:span "Foo"])))
     (testing "Binds value to input"
@@ -32,7 +51,11 @@
         ((get-in comp [2 1 :on-change]) (utils/target-value-event "foo"))
         (is (= @on-change-args [["foo"]]))))
     (testing "Disabled"
-      (is (true? (get-in ((rc/make-input {:disabled true})) [2 1 :disabled]))))))
+      (is (false? (get-disabled-prop ((rc/make-input {})))))
+      (is (true? (get-disabled-prop ((rc/make-input {:perm-disabled true})))))
+      (is (true? (get-disabled-prop ((rc/make-input {}) {:temp-disabled true}))))
+      (is (true? (get-disabled-prop
+                  ((rc/make-input {:perm-disabled true}) {:temp-disabled true})))))))
 
 (deftest test-errors-displayer
   (let [mount rc/errors-displayer]

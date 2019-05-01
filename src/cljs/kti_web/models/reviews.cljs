@@ -6,7 +6,7 @@
 (defn raw-status->status
   "Converts from a string to a status"
   [v]
-  (loop [[raw raw-rest] raw-status [key key-rest] status]
+  (loop [[raw & raw-rest] raw-status [key & key-rest] status]
     (cond
       (nil? raw) (throw (str "Unkown status " v))
       (= raw v)  key
