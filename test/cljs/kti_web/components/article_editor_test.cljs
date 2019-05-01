@@ -16,8 +16,8 @@
         (is (= (get-in comp [2 0]) rc/id-input))
         ;; Has correct value
         (is (= (get-in comp [2 1 :value]) 87))
-        ;; Is disabled
-        (is (= (get-in comp [2 1 :disabled] true)))))
+        ;; Is permanently disabled
+        (is (= (get-in comp [2 1 :perm-disabled] true)))))
     (testing "id-cap-ref-input"
       (let [[args fun] (utils/args-saver)
             comp (mount {:raw-editted-article factories/article-raw-spec

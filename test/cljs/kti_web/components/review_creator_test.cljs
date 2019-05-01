@@ -17,7 +17,8 @@
 
 ;; Tests
 (deftest test-review-creator-form
-  (let [mount rc/review-creator-form]
+  (let [mount rc/review-creator-form
+        get-submit-button #(get-in % [5])]
     (testing "Changing id-article"
       (let [id 9
             new-id 8
@@ -49,7 +50,15 @@
       (let [[args fun] (utils/args-saver)
             comp (mount {:on-review-creation-submit fun})]
         ((get-in comp [1 :on-submit]) (utils/prevent-default-event))
-        (is (= @args [[]]))))))
+        (is (= @args [[]]))))
+    (let [normal-comp (mount {:loading false})
+          loading-comp (mount {:loading? true})]
+      (testing "Disables inputs when loading"
+        (are [i] (true? (get-in loading-comp [i 1 :temp-disabled])) 2 3 4)
+        (are [i] (nil? (get-in normal-comp [i 1 :temp-disabled])) 2 3 4))
+      (testing "Disables button when loading"
+        (is (true? (->  loading-comp get-submit-button (get-in [1 :disabled]))))
+        (is (nil? (->  normal-comp get-submit-button (get-in [1 :disabled]))))))))
 
 (deftest test-review-creator-inner
   (let [mount rc/review-creator-inner
