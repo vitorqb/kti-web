@@ -3,17 +3,17 @@
    [kti-web.utils :refer-macros [go-with-done-chan] :as utils]
    [kti-web.components.utils
     :as component-utils
-    :refer [make-input make-select]]
+    :refer [make-input make-select make-textarea]]
    [kti-web.models.reviews :as review-models]
    [kti-web.components.utils :as components-utils]
    [reagent.core :as r :refer [atom]]
    [cljs.core.async :as async :refer [>! <! go]]))
 
 (def inputs
-  {:id-article    (make-input  {:text "Article Id" :type "number"})
-   :feedback-text (make-input  {:text "Feedback Text" :type "text"})
-   :status        (make-select {:text "Status"
-                                :options review-models/raw-status})})
+  {:id-article    (make-input     {:text "Article Id" :type "number"})
+   :feedback-text (make-textarea  {:text "Feedback Text" :type "text"})
+   :status        (make-select    {:text "Status"
+                                   :options review-models/raw-status})})
 
 (defn review-creator-form
   "Pure form component for creation of a review."

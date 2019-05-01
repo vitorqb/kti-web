@@ -57,6 +57,30 @@
       (is (true? (get-disabled-prop
                   ((rc/make-input {:perm-disabled true}) {:temp-disabled true})))))))
 
+(deftest test-make-textarea
+  (let [get-disabled #(get-in % [2 1 :disabled])]
+    (testing "Renders components"
+      (let [comp ((rc/make-textarea {:text "foo"}) {})]
+        (is (= (get comp 0) :<>))
+        (is (= (get comp 1) [:span "foo"]))
+        (is (= (get-in comp [2 0]) :textarea))))
+    (testing "Passes props"
+      (are [k] (= (get-in ((rc/make-textarea {}) {k ::foo}) [2 1 k]) ::foo)
+        :value
+        :rows
+        :cols))
+    (testing "Calls on-change"
+      (let [[args fun] (utils/args-saver)]
+        (-> ((rc/make-textarea {}) {:on-change fun})
+            (get-in [2 1 :on-change])
+            (apply [(utils/target-value-event "foo")]))
+        (is (= @args [["foo"]]))))
+    (testing "Disabled"
+      (are [f props] (f (get-disabled ((rc/make-textarea {}) props)))
+        false? {}
+        false? {:temp-disabled false}
+        true?  {:temp-disabled true}))))
+
 (deftest test-errors-displayer
   (let [mount rc/errors-displayer]
     (testing "Don't show if errors is nil or {}"

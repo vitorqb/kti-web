@@ -36,6 +36,18 @@
               :type type
               :disabled (or perm-disabled temp-disabled false)}]]))
 
+(defn make-textarea
+  "Makes an textarea component"
+  [{:keys [text perm-disabled]}]
+  (fn [{:keys [rows cols value on-change temp-disabled]}]
+    [:<>
+     [:span text]
+     [:textarea {:rows (or rows 5)
+                 :cols (or cols 73)
+                 :disabled (or perm-disabled temp-disabled false)
+                 :value value
+                 :on-change (utils/call-with-val on-change)}]]))
+
 (defn submit-button
   ([] (submit-button {:text "Submit!"}))
   ([{:keys [text disabled]}]
