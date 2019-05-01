@@ -101,7 +101,10 @@
                    [:li "two"]
                    ([:ul {:key "three"}
                      [:li "three"]
-                     [:ul [:li "Baz"]]])])]))))))
+                     [:ul [:li "Baz"]]])])]))))
+    (testing "Shows raw texts"
+      (is (= (mount {:status {:errors "FOO"}})
+             [:div.errors-displayer "FOO"])))))
 
 (deftest test-errors-displayer-tree
   (let [mount #'kti-web.components.utils/errors-displayer-tree]
