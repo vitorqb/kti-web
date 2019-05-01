@@ -6,7 +6,7 @@
    [kti-web.components.utils :as components-utils]
    [cljs.core.async :refer [chan <! >! put! go] :as async]))
 
-(def id-input (components-utils/make-input {:text "Id" :disabled true}))
+(def id-input (components-utils/make-input {:text "Id" :perm-disabled true}))
 (def id-cap-ref-input (components-utils/make-input {:text "Captured Ref. Id"}))
 (def description-input (components-utils/make-input {:text "Description"}))
 (def tags-input (components-utils/make-input {:text "Tags"}))
