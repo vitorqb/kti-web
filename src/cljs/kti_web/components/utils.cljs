@@ -68,7 +68,9 @@
   "Component responsible for rendering a map of errors."
   [{{errors :errors} :status}]
   [:div.errors-displayer
-   (map errors-displayer-tree (into [] errors))])
+   (if (string? errors)
+     errors
+     (map errors-displayer-tree (into [] errors)))])
 
 (defn success-message-displayer
   "Component responsible for rendering a success msg."
