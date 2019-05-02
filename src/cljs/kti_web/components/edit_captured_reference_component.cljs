@@ -4,9 +4,9 @@
    [reagent.core :as r]
    [kti-web.components.utils :refer [submit-button call-prevent-default]]
    [kti-web.components.select-captured-ref :refer [select-captured-ref]]
-   [kti-web.utils
-    :refer [call-prevent-default call-with-val to-str]
-    :refer-macros [go-with-done-chan]]))
+   [kti-web.utils :refer [call-prevent-default call-with-val to-str]]
+   [kti-web.utilsc :refer-macros [go-with-done-chan]]
+))
 
 (defn captured-ref-inputs--id [{:keys [id]}]
   [:div [:span "Id"] [:input {:value (or id "") :disabled true}]])

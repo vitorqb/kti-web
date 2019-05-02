@@ -1,6 +1,7 @@
 (ns kti-web.components.review-creator
   (:require
-   [kti-web.utils :refer-macros [go-with-done-chan] :as utils]
+   [kti-web.utils :as utils]
+   [kti-web.utilsc :refer-macros [go-with-done-chan]]
    [kti-web.components.utils
     :as component-utils
     :refer [make-input make-select make-textarea]]

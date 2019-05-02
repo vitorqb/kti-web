@@ -2,9 +2,8 @@
   (:require
    [reagent.core :refer [atom] :as r]
    [cljs.core.async :refer [go <! >!] :as async]
-   [kti-web.utils
-    :refer-macros [go-with-done-chan]
-    :as utils]
+   [kti-web.utils :as utils]
+   [kti-web.utilsc :refer-macros [go-with-done-chan]]
    [kti-web.components.utils :as components-utils]))
 
 (def initial-state
