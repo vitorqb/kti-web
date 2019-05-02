@@ -1,7 +1,8 @@
 (ns kti-web.components.article-editor
   (:require
    [reagent.core :as r :refer [atom]]
-   [kti-web.utils :as utils :refer-macros [go-with-done-chan]]
+   [kti-web.utils :as utils]
+   [kti-web.utilsc :refer-macros [go-with-done-chan]]
    [kti-web.models.articles :as articles]
    [kti-web.components.utils :as components-utils]
    [cljs.core.async :refer [chan <! >! put! go] :as async]))

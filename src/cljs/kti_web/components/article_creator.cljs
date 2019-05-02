@@ -4,8 +4,8 @@
    [cljs.core.async :refer [chan <! >! put! go] :as async]
    [kti-web.utils
     :refer [call-with-val call-prevent-default]
-    :refer-macros [go-with-done-chan]
     :as utils]
+   [kti-web.utilsc :refer-macros [go-with-done-chan]]
    [kti-web.models.articles :as articles]
    [kti-web.components.utils :refer [submit-button] :as components-utils]))
 

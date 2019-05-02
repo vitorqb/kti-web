@@ -3,7 +3,8 @@
    [cljs.core.async :refer [<! chan go >!]]
    [kti-web.utils
     :refer [call-with-val call-prevent-default]
-    :refer-macros [go-with-done-chan]]
+    :as utils]
+   [kti-web.utilsc :refer-macros [go-with-done-chan]]
    [kti-web.components.utils :refer [submit-button]]))
 
 (defn select-captured-ref

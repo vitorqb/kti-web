@@ -1,4 +1,4 @@
-(ns kti-web.utils)
+(ns kti-web.utilsc)
 
 (defmacro go-with-done-chan
   "Executes body in a go block, returning a channel in which :done is written
