@@ -3,18 +3,11 @@
    [kti-web.utils :as utils]
    [kti-web.utilsc :refer-macros [go-with-done-chan]]
    [kti-web.components.utils
-    :as component-utils
+    :as components-utils
     :refer [make-input make-select make-textarea]]
    [kti-web.models.reviews :as review-models]
-   [kti-web.components.utils :as components-utils]
    [reagent.core :as r :refer [atom]]
    [cljs.core.async :as async :refer [>! <! go]]))
-
-(def inputs
-  {:id-article    (make-input     {:text "Article Id" :type "number"})
-   :feedback-text (make-textarea  {:text "Feedback Text" :type "text"})
-   :status        (make-select    {:text "Status"
-                                   :options review-models/raw-status})})
 
 (defn review-creator-form
   "Pure form component for creation of a review."
@@ -24,14 +17,15 @@
         (fn [k v] (on-review-raw-spec-change (assoc review-raw-spec k v)))
         render-input
         (fn [k]
-          [(inputs k) {:value (k review-raw-spec)
-                       :on-change #(handle-change k %)
-                       :temp-disabled loading?}])]
+          (let [{fun :fun :as opts} (get review-models/inputs k)]
+            [(fun opts) {:value (k review-raw-spec)
+                         :on-change #(handle-change k %)
+                         :temp-disabled loading?}]))]
     [:form {:on-submit (utils/call-prevent-default #(on-review-creation-submit))}
      (render-input :id-article)
      (render-input :feedback-text)
      (render-input :status)
-     [component-utils/submit-button {:disabled loading?}]]))
+     [components-utils/submit-button {:disabled loading?}]]))
 
 (defn review-creator-inner
   "Pure component for review creation."

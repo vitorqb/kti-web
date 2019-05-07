@@ -1,7 +1,17 @@
-(ns kti-web.models.reviews)
+(ns kti-web.models.reviews
+  (:require
+   [kti-web.components.utils
+    :as components-utils
+    :refer [make-input make-select make-textarea]]))
 
 (def raw-status ["in-progress" "completed" "discarded"])
 (def status     [:in-progress  :completed  :discarded])
+
+(def inputs
+  "Opts for the inputs components for a review."
+  {:id-article    {:fun make-input :text "Article Id" :type "number"}
+   :feedback-text {:fun make-textarea :text "Feedback Text"}
+   :status        {:fun make-select :text "Status" :options raw-status}})
 
 (defn raw-status->status
   "Converts from a string to a status"
