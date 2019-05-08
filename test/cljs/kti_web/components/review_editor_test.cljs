@@ -57,3 +57,44 @@
             comp (mount {:edited-review {::a ::b} :on-edited-review-change fun})]
         ((-> comp get-status-input-props :on-change) :completed)
         (is (= @args [[{::a ::b :status :completed}]]))))))
+
+(deftest test-review-selector
+  (let [mount rc/review-selector]
+    (testing "Calls on-review-selection-submit"
+      (let [[args fun] (utils/args-saver)
+            comp (mount {:on-review-selection-submit fun})]
+        ((get-in comp [1 :on-submit]) (utils/prevent-default-event))
+        (is (= @args [[]]))))
+    (testing "Set's selected-review-id"
+      (is (= (-> {:selected-review-id 9} mount (get-in [2 1 :value])) 9)))
+    (testing "On selected-review-id change"
+      (let [[args fun] (utils/args-saver)
+            comp (mount {:on-selected-review-id-change fun})]
+        ((get-in comp [2 1 :on-change]) 9)
+        (is (= @args [[9]]))))
+    (testing "Displays error message based on selection-status"
+      (is (= (-> {:selection-status {::a ::b}} mount (get 3))
+             [components-utils/errors-displayer {:status {::a ::b}}])))))
+
+(deftest test-review-editor--inner
+  (let [mount rc/review-editor--inner
+        get-review-selector #(get % 1)
+        get-form #(get % 2)
+        get-err-comp #(get % 3)
+        get-success-msg-comp #(get % 4)]
+    (testing "Mounts form with props"
+      (is (= (-> {:edited-review {::a ::b}}
+                 mount
+                 get-form)
+             [rc/review-editor-form {:edited-review {::a ::b}}])))
+    (testing "Hides form if no edited-review"
+      (is (= (-> {} mount get-form) nil)))
+    (testing "Renders error-msg component"
+      (is (= (-> {::a ::b} mount get-err-comp)
+             [components-utils/errors-displayer {::a ::b}])))
+    (testing "Renders success-msg component"
+      (is (= (-> {::a ::b} mount get-success-msg-comp)
+             [components-utils/success-message-displayer {::a ::b}])))
+    (testing "Renders review-selector"
+      (is (= (-> {::a ::b} mount get-review-selector)
+             [rc/review-selector {::a ::b}])))))
