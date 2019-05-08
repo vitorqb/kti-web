@@ -4,14 +4,15 @@
    [kti-web.utils :as utils]
    [kti-web.utilsc :refer-macros [go-with-done-chan]]
    [kti-web.models.articles :as articles]
-   [kti-web.components.utils :as components-utils]
+   [kti-web.components.utils :as components-utils :refer [input]]
    [cljs.core.async :refer [chan <! >! put! go] :as async]))
 
-(def id-input (components-utils/make-input {:text "Id" :perm-disabled true}))
-(def id-cap-ref-input (components-utils/make-input {:text "Captured Ref. Id"}))
-(def description-input (components-utils/make-input {:text "Description"}))
-(def tags-input (components-utils/make-input {:text "Tags"}))
-(def action-link (components-utils/make-input {:text "Action link"}))
+(def inputs
+  {:id [input {:text "Id" :disabled true}]
+   :id-captured-reference [input {:text "Captured Ref. Id"}]
+   :description [input {:text "Description"}]
+   :tags [input {:text "Tags"}]
+   :action-link [input {:text "Action link"}]})
 
 (defn article-editor-form
   "Pure form component for article editting"
@@ -20,15 +21,17 @@
   (letfn [(handle-change [k]
             (fn [v]
               (on-raw-editted-article-change (assoc raw-editted-article k v))))
-          (make-props [k]
-            {:value (k raw-editted-article)
-             :on-change (handle-change k)})]
+          (make-input [k]
+            (let [[comp props] (get inputs k)]
+              [comp (assoc props
+                           :value (k raw-editted-article)
+                           :on-change (handle-change k))]))]
     [:form {:on-submit (utils/call-prevent-default #(on-edit-article-submit))}
-     [id-input {:value raw-editted-article-id}]
-     [id-cap-ref-input (make-props :id-captured-reference)]
-     [description-input (make-props :description)]
-     [tags-input (make-props :tags)]
-     [action-link (make-props :action-link)]
+     (-> (make-input :id) (assoc-in [1 :value] raw-editted-article-id))
+     (make-input :id-captured-reference)
+     (make-input :description)
+     (make-input :tags)
+     (make-input :action-link)
      [components-utils/submit-button]]))
 
 (defn article-selector

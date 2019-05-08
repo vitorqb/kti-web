@@ -4,15 +4,12 @@
    [cljs.core.async :refer [go <! >!] :as async]
    [kti-web.utils :as utils]
    [kti-web.utilsc :refer-macros [go-with-done-chan]]
-   [kti-web.components.utils :as components-utils]))
+   [kti-web.components.utils :as components-utils :refer [input]]))
 
 (def initial-state
   {:delete-article-id nil
    :status {:errors nil :success-msg nil}
    :loading? false})
-
-(def article-id-input
-  (components-utils/make-input {:text "Article Id: " :width 100}))
 
 (defn article-deletor--inner
   "Pure component for article deletion"
@@ -24,8 +21,10 @@
    (if loading?
      [:div "Loading..."]
      [:form {:on-submit (utils/call-prevent-default #(on-delete-article-id-submit))}
-      [article-id-input
-       {:value delete-article-id
+      [input
+       {:text "Article Id: "
+        :width 100
+        :value delete-article-id
         :on-change on-delete-article-id-change}]
       [components-utils/submit-button]])
      [components-utils/errors-displayer specs]

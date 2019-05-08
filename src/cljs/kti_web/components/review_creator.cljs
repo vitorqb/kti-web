@@ -2,9 +2,7 @@
   (:require
    [kti-web.utils :as utils]
    [kti-web.utilsc :refer-macros [go-with-done-chan]]
-   [kti-web.components.utils
-    :as components-utils
-    :refer [make-input make-select make-textarea]]
+   [kti-web.components.utils :as components-utils]
    [kti-web.models.reviews :as review-models]
    [reagent.core :as r :refer [atom]]
    [cljs.core.async :as async :refer [>! <! go]]))
@@ -17,10 +15,11 @@
         (fn [k v] (on-review-raw-spec-change (assoc review-raw-spec k v)))
         render-input
         (fn [k]
-          (let [{fun :fun :as opts} (get review-models/inputs k)]
-            [(fun opts) {:value (k review-raw-spec)
+          (let [[comp props] (get review-models/inputs k)]
+            [comp (assoc props
+                         :value (k review-raw-spec)
                          :on-change #(handle-change k %)
-                         :temp-disabled loading?}]))]
+                         :disabled loading?)]))]
     [:form {:on-submit (utils/call-prevent-default #(on-review-creation-submit))}
      (render-input :id-article)
      (render-input :feedback-text)

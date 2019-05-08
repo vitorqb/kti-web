@@ -4,8 +4,8 @@
    [kti-web.test-utils :as utils]
    [kti-web.components.utils :as rc]))
 
-(deftest test-select
-  (let [mount rc/select]
+(deftest test-select-wrapper
+  (let [mount rc/select-wrapper]
     (testing "Initializes with correct options"
       (let [options ["foo" "bar"] comp (mount {:options options})]
         ;; Select accepts {:label x :value x}
@@ -25,61 +25,69 @@
         (is (true? (get-in disabled-comp [1 :isDisabled])))
         (is (false? (get-in normal-comp [1 :isDisabled])))))))
 
-(deftest test-make-select
-  (let [get-disabled-prop #(get-in % [2 1 :disabled])]
-  (testing "Permanently disabled"
-    (are [f props] (f (get-disabled-prop ((rc/make-select props))))
-      false? {}
-      false? {:perm-disabled false}
-      true?  {:perm-disabled true}))
-  (testing "Temporarily disabled"
-    (are [f props] (f (get-disabled-prop ((rc/make-select {}) props)))
-      false? {}
-      false? {:temp-disabled false}
-      true?  {:temp-disabled true}))))
+(deftest test-select
+  (let [mount rc/select
+        get-inner-select-props #(get-in % [2 1])
+        get-text-span #(get % 1)]
+    (testing "Text span"
+      (is (= (-> {:text "foo"} mount get-text-span) [:span "foo"])))
+    (testing "Set's options"
+      (is (= (-> {:options ["a"]} mount get-inner-select-props :options) ["a"])))
+    (testing "Set's value"
+      (is (= (-> {:value "foo"} mount get-inner-select-props :value) "foo")))
+    (testing "Disabled defeaults to false"
+      (is (false? (-> {} mount get-inner-select-props :disabled))))
+    (testing "Set's disabled"
+      (is (true? (-> {:disabled true} mount get-inner-select-props :disabled))))))
 
-(deftest test-make-input
-  (let [foo-input (rc/make-input {:text "Foo"})
-        get-disabled-prop #(get-in % [2 1 :disabled])]
-    (testing "Contains span with text"
-      (is (= (get-in (foo-input {}) [1]) [:span "Foo"])))
-    (testing "Binds value to input"
-      (is (= (get-in (foo-input {:value :a}) [2 1 :value]) :a)))
-    (testing "Calls on-change on change"
-      (let [[on-change-args on-change] (utils/args-saver)
-            comp (foo-input {:on-change on-change})]
-        ((get-in comp [2 1 :on-change]) (utils/target-value-event "foo"))
-        (is (= @on-change-args [["foo"]]))))
-    (testing "Disabled"
-      (is (false? (get-disabled-prop ((rc/make-input {})))))
-      (is (true? (get-disabled-prop ((rc/make-input {:perm-disabled true})))))
-      (is (true? (get-disabled-prop ((rc/make-input {}) {:temp-disabled true}))))
-      (is (true? (get-disabled-prop
-                  ((rc/make-input {:perm-disabled true}) {:temp-disabled true})))))))
-
-(deftest test-make-textarea
-  (let [get-disabled #(get-in % [2 1 :disabled])]
-    (testing "Renders components"
-      (let [comp ((rc/make-textarea {:text "foo"}) {})]
-        (is (= (get comp 0) :<>))
-        (is (= (get comp 1) [:span "foo"]))
-        (is (= (get-in comp [2 0]) :textarea))))
-    (testing "Passes props"
-      (are [k] (= (get-in ((rc/make-textarea {}) {k ::foo}) [2 1 k]) ::foo)
-        :value
-        :rows
-        :cols))
+(deftest test-input
+  (let [mount rc/input
+        get-inner-input-props #(get-in % [2 1])
+        get-text-span #(get % 1)]
+    (testing "Text value"
+      (is (= (-> {:text "foo"} mount get-text-span) [:span "foo"])))
+    (testing "No text span if no text"
+      (nil? (= (-> {} mount get-text-span))))
+    (testing "Set's type"
+      (is (= (-> {:type ::a} mount get-inner-input-props :type) ::a)))
+    (testing "Set's disabled"
+      (is (true? (-> {:disabled true} mount get-inner-input-props :disabled))))
+    (testing "Disabled defaults to false"
+      (is (false? (-> {} mount get-inner-input-props :disabled))))
+    (testing "Width defaults to 600"
+      (is (= (-> {} mount get-inner-input-props :style :width) 600)))
+    (testing "Set's width"
+      (is (= (-> {:width 9} mount get-inner-input-props :style :width) 9)))
+    (testing "Set's value"
+      (is (= (-> {:value "baz"} mount get-inner-input-props :value) "baz")))
+    (testing "Calls on-change with change value"
+      (let [[args fun] (utils/args-saver)
+            comp (mount {:on-change fun})]
+        ((-> comp get-inner-input-props :on-change) (utils/target-value-event "foo"))
+        (is (= @args [["foo"]]))))))
+    
+(deftest test-textarea
+  (let [mount rc/textarea
+        get-inner-textarea-props #(get-in % [2 1])]
+    (testing "Rows default to 5"
+      (is (= (-> {} mount get-inner-textarea-props :rows) 5)))
+    (testing "Set's rows"
+      (is (= (-> {:rows 10} mount get-inner-textarea-props :rows) 10)))
+    (testing "cols default to 73"
+      (is (= (-> {} mount get-inner-textarea-props :cols) 73)))
+    (testing "Set's cols"
+      (is (= (-> {:cols 10} mount get-inner-textarea-props :cols) 10)))
+    (testing "Disabled defaults to false"
+      (is (false? (-> {} mount get-inner-textarea-props :disabled))))
+    (testing "Set's Disabled"
+      (is (true? (-> {:disabled true} mount get-inner-textarea-props :disabled))))
+    (testing "Set's value"
+      (is (= (-> {:value "foo"} mount get-inner-textarea-props :value) "foo")))
     (testing "Calls on-change"
-      (let [[args fun] (utils/args-saver)]
-        (-> ((rc/make-textarea {}) {:on-change fun})
-            (get-in [2 1 :on-change])
-            (apply [(utils/target-value-event "foo")]))
-        (is (= @args [["foo"]]))))
-    (testing "Disabled"
-      (are [f props] (f (get-disabled ((rc/make-textarea {}) props)))
-        false? {}
-        false? {:temp-disabled false}
-        true?  {:temp-disabled true}))))
+      (let [[args fun] (utils/args-saver)
+            comp (mount {:on-change fun})]
+        ((-> comp get-inner-textarea-props :on-change) (utils/target-value-event "foo"))
+        (is (= @args [["foo"]]))))))
 
 (deftest test-errors-displayer
   (let [mount rc/errors-displayer]

@@ -35,10 +35,10 @@
 (deftest test-article-deletor--inner
   (let [mount rc/article-deletor--inner]
     (testing "Renders input for delete-article-id"
-      (is (= (-> {:delete-article-id ::id :on-delete-article-id-change ::fun}
-                 (mount)
-                 (get-in [3 2]))
-             [rc/article-id-input {:value ::id :on-change ::fun}])))
+      (let [comp (mount {:delete-article-id ::id :on-delete-article-id-change ::fun})]
+        (is (= (get-in comp [3 2 0]) components-utils/input))
+        (is (= (get-in comp [3 2 1 :value]) ::id))
+        (is (= (get-in comp [3 2 1 :on-change]) ::fun))))
     (testing "On submit"
       (let [[args fun] (utils/args-saver)
             comp (mount {:on-delete-article-id-submit fun})]
