@@ -3,23 +3,27 @@
    [cljs.core.async :refer [go <! >! timeout]]
    [reagent.core :as r]
    [kti-web.components.utils
-    :refer [submit-button call-prevent-default make-input]
+    :refer [submit-button call-prevent-default input]
     :as components-utils]
    [kti-web.components.select-captured-ref :refer [select-captured-ref]]
    [kti-web.utils :refer [call-prevent-default call-with-val to-str]]
    [kti-web.utilsc :refer-macros [go-with-done-chan]]))
 
 (def inputs
-  {:id         (make-input {:text "Id" :perm-disabled true :type "number"})
-   :created-at (make-input {:text "Created at" :perm-disabled true})
-   :reference  (make-input {:text "Reference"})})
+  {:id         [input {:text "Id" :disabled true :type "number"}]
+   :created-at [input {:text "Created at" :disabled true}]
+   :reference  [input {:text "Reference"}]})
 
 (defn captured-ref-inputs [{:keys [value on-change]}]
-  [:div
-   [(:id inputs)         {:value (:id value)}]
-   [(:created-at inputs) {:value (:created-at value)}]
-   [(:reference inputs)  {:value (:reference value)
-                          :on-change #(on-change (assoc value :reference %))}]])
+  (letfn [(make-input [k]
+            (let [[comp props] (get inputs k)]
+              [comp (assoc props
+                           :value (get value k)
+                           :on-change #(on-change (assoc value k %)))]))]
+    [:div
+     (make-input :id)
+     (make-input :created-at)
+     (make-input :reference)]))
 
 (defn edit-captured-ref-form
   [{:keys [cap-ref on-cap-ref-change on-submit]}]

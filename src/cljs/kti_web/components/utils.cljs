@@ -4,7 +4,7 @@
    [reagent.core :as r]
    [cljsjs.react-select]))
 
-(defn select
+(defn select-wrapper
   "Wrapper around react-select providing a select component"
   [{:keys [value on-change options disabled]}]
   [(r/adapt-react-class js/Select)
@@ -13,40 +13,38 @@
     :on-change  #(-> % js->clj (get "value") on-change)
     :isDisabled (or disabled false)}])
 
-(defn make-select
-  "Makes a select component. Options must be an array of strings."
-  [{:keys [text options perm-disabled]}]
-  (fn [{:keys [value on-change temp-disabled]}]
-    [:<>
-     [:span text]
-     [select {:options options
-              :on-change on-change
-              :value value
-              :disabled (or perm-disabled temp-disabled false)}]]))
+(defn select
+  "A select component. Options must be an array of strings."
+  [{:keys [text options value on-change disabled]}]
+  [:<>
+   [:span text]
+   [select-wrapper
+    {:options options
+     :on-change on-change
+     :value value
+     :disabled (or disabled false)}]])
 
-(defn make-input
-  "Makes an input component"
-  [{:keys [text type perm-disabled width]}]
-  (fn [{:keys [value on-change temp-disabled]}]
-    [:<>
-     [:span text]
-     [:input {:style {:width (or width 600)}
-              :value value
-              :on-change (utils/call-with-val on-change)
-              :type type
-              :disabled (or perm-disabled temp-disabled false)}]]))
+(defn input
+  "A generic input component"
+  [{:keys [text type disabled width value on-change]}]
+  [:<>
+   [:span text]
+   [:input {:style {:width (or width 600)}
+            :value value
+            :on-change (utils/call-with-val on-change)
+            :type type
+            :disabled (or disabled false)}]])
 
-(defn make-textarea
-  "Makes an textarea component"
-  [{:keys [text perm-disabled]}]
-  (fn [{:keys [rows cols value on-change temp-disabled]}]
-    [:<>
-     [:span text]
-     [:textarea {:rows (or rows 5)
-                 :cols (or cols 73)
-                 :disabled (or perm-disabled temp-disabled false)
-                 :value value
-                 :on-change (utils/call-with-val on-change)}]]))
+(defn textarea
+  "A textarea component"
+  [{:keys [text disabled rows cols value on-change]}]
+  [:<>
+   [:span text]
+   [:textarea {:rows (or rows 5)
+               :cols (or cols 73)
+               :disabled (or disabled false)
+               :value value
+               :on-change (utils/call-with-val on-change)}]])
 
 (defn submit-button
   ([] (submit-button {:text "Submit!"}))

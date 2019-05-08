@@ -7,16 +7,7 @@
     :as utils]
    [kti-web.utilsc :refer-macros [go-with-done-chan]]
    [kti-web.models.articles :as articles]
-   [kti-web.components.utils :refer [submit-button] :as components-utils]))
-
-(def article-creator-inputs--id-captured-reference
-  (components-utils/make-input {:text "Id Captued Reference" :type "number"}))
-(def article-creator-inputs--description
-  (components-utils/make-input {:text "Description"}))
-(def article-creator-inputs--tags
-  (components-utils/make-input {:text "Tags"}))
-(def article-creator-inputs--action-link
-  (components-utils/make-input {:text "Action Link"}))
+   [kti-web.components.utils :refer [input submit-button] :as components-utils]))
 
 (defn make-success-msg [{:keys [id]}] (str "Created article with id " id))
 
@@ -25,17 +16,22 @@
   (letfn [(change-handler [k] #(on-article-spec-update (assoc article-spec k %)))]
     [:form {:on-submit (call-prevent-default #(on-article-creation-submit))}
      [:h3 "Create Article"]
-     [article-creator-inputs--id-captured-reference
-      {:value (:id-captured-reference article-spec)
+     [input
+      {:text "Id Captued Reference"
+       :type "number"
+       :value (:id-captured-reference article-spec)
        :on-change (change-handler :id-captured-reference)}]
-     [article-creator-inputs--description
+     [input
       {:value (:description article-spec)
-       :on-change (change-handler :description)}]
-     [article-creator-inputs--tags
+       :on-change (change-handler :description)
+       :text "Description"}]
+     [input
       {:value (:tags article-spec)
-       :on-change (change-handler :tags)}]
-     [article-creator-inputs--action-link
-      {:value (:action-link article-spec)
+       :on-change (change-handler :tags)
+       :text "Tags"}]
+     [input
+      {:text "Action Link"
+       :value (:action-link article-spec)
        :on-change (change-handler :action-link)}]
      [submit-button]]))
 

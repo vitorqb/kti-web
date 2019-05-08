@@ -1,4 +1,6 @@
-(ns cljs.user)
+(ns cljs.user
+  (:require
+   [cljs.test :as test :include-macros]))
 
 (defn set-token!
   "A shortcut to set the current token"

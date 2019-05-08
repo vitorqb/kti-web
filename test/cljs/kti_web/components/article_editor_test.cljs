@@ -13,7 +13,7 @@
     (testing "Disabled id input"
       (let [comp (mount {:raw-editted-article-id 87})]
         ;; Mounts correct input
-        (is (= (get-in comp [2 0]) rc/id-input))
+        (is (= (get-in comp [2 0]) components-utils/input))
         ;; Has correct value
         (is (= (get-in comp [2 1 :value]) 87))
         ;; Is permanently disabled
@@ -23,7 +23,7 @@
             comp (mount {:raw-editted-article factories/article-raw-spec
                          :on-raw-editted-article-change fun})]
         ;; Mounts correct value
-        (is (= (get-in comp [3 0]) rc/id-cap-ref-input))
+        (is (= (get-in comp [3 0]) components-utils/input))
         (is (= (get-in comp [3 1 :value])
                (:id-captured-reference factories/article-raw-spec)))
         ;; Calls on-change
@@ -35,7 +35,7 @@
             comp (mount {:raw-editted-article factories/article-raw-spec
                          :on-raw-editted-article-change fun})]
         ;; Mounts correct value
-        (is (= (get-in comp [4 0]) rc/description-input))
+        (is (= (get-in comp [4 0]) components-utils/input))
         (is (= (get-in comp [4 1 :value])
                (:description factories/article-raw-spec)))
         ;; Calls on-change
@@ -46,7 +46,7 @@
             comp (mount {:raw-editted-article factories/article-raw-spec
                          :on-raw-editted-article-change fun})]
         ;; Mounts correct value
-        (is (= (get-in comp [5 0]) rc/tags-input))
+        (is (= (get-in comp [5 0]) components-utils/input))
         (is (= (get-in comp [5 1 :value]) (:tags factories/article-raw-spec)))
         ;; Calls on-change
         ((get-in comp [5 1 :on-change]) "foo, bar, baz")

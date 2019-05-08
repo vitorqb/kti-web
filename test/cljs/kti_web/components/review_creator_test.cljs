@@ -54,8 +54,8 @@
     (let [normal-comp (mount {:loading false})
           loading-comp (mount {:loading? true})]
       (testing "Disables inputs when loading"
-        (are [i] (true? (get-in loading-comp [i 1 :temp-disabled])) 2 3 4)
-        (are [i] (nil? (get-in normal-comp [i 1 :temp-disabled])) 2 3 4))
+        (are [i] (true? (get-in loading-comp [i 1 :disabled])) 2 3 4)
+        (are [i] (nil? (get-in normal-comp [i 1 :disabled])) 2 3 4))
       (testing "Disables button when loading"
         (is (true? (->  loading-comp get-submit-button (get-in [1 :disabled]))))
         (is (nil? (->  normal-comp get-submit-button (get-in [1 :disabled]))))))))
