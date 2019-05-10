@@ -1,4 +1,4 @@
-(defproject kti-web "0.1.0-SNAPSHOT"
+(defproject kti-web "0.3.0"
   :description "FIXME: A frontend for KTI"
   :url "https://github.com/vitorqb/kti-web/"
   :license {:name "Eclipse Public License"
