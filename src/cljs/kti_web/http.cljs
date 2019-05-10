@@ -101,8 +101,20 @@
    {:http-fn http/delete
     :url (api-url (str "articles/" id))}))
 
+;; !!!! TODO -> This guy should parse the response
+(defn get-review! [id]
+  (run-req!
+   {:http-fn http/get
+    :url (api-url (str "reviews/" id))}))
+
 (defn post-review! [spec]
   (run-req!
    {:http-fn http/post
     :url (api-url "reviews")
+    :json-params spec}))
+
+(defn put-review! [id spec]
+  (run-req!
+   {:http-fn http/put
+    :url (api-url (str "reviews/" id))
     :json-params spec}))

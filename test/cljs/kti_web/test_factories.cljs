@@ -62,6 +62,12 @@
   {:id 823
    :id-article 121
    :feedback-text "It rocks!"
+   :status :completed})
+
+(def review-server-resp
+  {:id 823
+   :id-article 121
+   :feedback-text "It rocks!"
    :status "completed"})
 
 (defn ok-response
