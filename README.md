@@ -4,6 +4,32 @@ This is the kti-web project.
 
 This is a personal project which is a frontend to https://github.com/vitorqb/kti.
 
+## Installing
+
+As simple as this:
+
+```shell
+curl -L -o kti-web.jar https://github.com/vitorqb/kti-web/releases/download/0.3.0/kti-web.jar && java -jar kti-web.jar
+```
+
+Then open your browser at `127.0.0.1:3000`.
+
+![alt text](img/init-screen-at-browser.png "Logo Title Text 1")
+
+## Host and Token
+
+Notice you need to input a Host and a Token.
+
+The host is the backend you will talk to. There is backend available at `http://159.65.192.68`.
+
+The token can be requested to the backend with a post request:
+
+```shell
+curl -H 'Content-Type: application/json' --data '{"email": "<your-email>"}' 159.65.192.68/api/token
+```
+
+You will receive an email with the token.
+
 ## Development mode
 
 The project uses figwheel-main (https://github.com/bhauman/figwheel-main) for development builds.
