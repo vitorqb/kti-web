@@ -4,6 +4,7 @@
    [cljs.core.async :refer [chan <! >! put! go] :as async]
    [kti-web.models.reviews :as reviews-models]
    [kti-web.components.review-editor :as rc]
+   [kti-web.components.review-selector :refer [review-selector]]
    [kti-web.components.utils :as components-utils]
    [kti-web.models.reviews :as models-reviews]
    [kti-web.test-utils :as utils]
@@ -52,24 +53,6 @@
       (are [i] (true? (-> {:loading? true} mount (get-in [i 1]) :disabled))
         2 3 4 5))))
 
-(deftest test-review-selector
-  (let [mount rc/review-selector]
-    (testing "Calls on-review-selection-submit"
-      (let [[args fun] (utils/args-saver)
-            comp (mount {:on-review-selection-submit fun})]
-        ((get-in comp [1 :on-submit]) (utils/prevent-default-event))
-        (is (= @args [[]]))))
-    (testing "Set's selected-review-id"
-      (is (= (-> {:selected-review-id 9} mount (get-in [2 1 :value])) 9)))
-    (testing "On selected-review-id change"
-      (let [[args fun] (utils/args-saver)
-            comp (mount {:on-selected-review-id-change fun})]
-        ((get-in comp [2 1 :on-change]) 9)
-        (is (= @args [[9]]))))
-    (testing "Displays error message based on selection-status"
-      (is (= (-> {:selection-status {::a ::b}} mount (get 4))
-             [components-utils/errors-displayer {:status {::a ::b}}])))))
-
 (deftest test-review-editor--inner
   (let [mount rc/review-editor--inner
         get-review-selector #(get % 2)
@@ -91,7 +74,7 @@
              [components-utils/success-message-displayer {::a ::b}])))
     (testing "Renders review-selector"
       (is (= (-> {::a ::b} mount get-review-selector)
-             [rc/review-selector {::a ::b}])))))
+             [review-selector {::a ::b}])))))
 
 (deftest test-reduce-on-selection-submit
   (testing "Set's status on success"
