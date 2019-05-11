@@ -28,7 +28,8 @@
               put-captured-reference!
               post-review!
               put-review!
-              get-review!]]
+              get-review!
+              delete-review!]]
             [kti-web.state :refer [host init-state token]]
             [kti-web.utils :as utils :refer [call-prevent-default call-with-val]]
             [reagent.core :as r]
@@ -84,7 +85,7 @@
       [:h2 "Reviews"]
       [review-creator {:post-review! post-review!}]
       [review-editor {:get-review! get-review! :put-review! put-review!}]
-      [review-deletor {}]]]))
+      [review-deletor {:get-review! get-review! :delete-review! delete-review!}]]]))
 
 (defn host-input-inner [{:keys [value on-change]}]
   [:div
