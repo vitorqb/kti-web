@@ -78,7 +78,8 @@
     (fn []
       [review-editor--inner
        (assoc @state
-              :on-selected-review-id-change #(swap! state assoc :selected-review-id %)
+              :on-selected-review-id-change
+              #(swap! state assoc :selected-review-id % :edited-review nil)
               :on-review-selection-submit handle-review-selection-submit
               :on-edited-review-change #(swap! state assoc :edited-review %)
               :on-edited-review-submit handle-edited-review-submit)])))

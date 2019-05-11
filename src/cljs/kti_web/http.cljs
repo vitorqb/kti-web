@@ -127,3 +127,8 @@
     :url (api-url (str "reviews/" id))
     :json-params spec
     :deserialize-fn reviews/server-resp->review}))
+
+(defn delete-review! [id]
+  (run-req!
+   {:http-fn http/delete
+    :url (api-url (str "reviews/" id))}))
