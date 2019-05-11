@@ -2,7 +2,8 @@
   (:require
    [cljs.core.async :refer [>! <! take! put! go chan close!] :as async]
    [cljs-http.client :as http]
-   [kti-web.state :refer [token api-url]]))
+   [kti-web.state :refer [token api-url]]
+   [kti-web.models.reviews :as reviews]))
 
 (def ERR-MSG--INTERNAL-SERVER-ERROR
   (concat
@@ -44,13 +45,20 @@
     {:data body}
     {:error? true :data (parse-error-response response)}))
 
+(defn deserialize-on-success
+  "Deserializes using deserialize-fn if the response is not an error."
+  [{:keys [error?] :as resp} deserialize-fn]
+  (update resp :data (if error? identity deserialize-fn)))
+
 (defn run-req!
   "Runs a request using http-fn and json-params, maps the response with
   parse-response and returns a channel with the parsed response."
-  [{:keys [http-fn url json-params]}]
-  (async/map
-   parse-response
-   [(http-fn url (prepare-request-opts json-params))]))
+  [{:keys [http-fn url json-params deserialize-fn]
+    :or {deserialize-fn identity}}]
+  (as-> (prepare-request-opts json-params) it
+    (http-fn url it)
+    (async/map parse-response [it])
+    (async/map #(deserialize-on-success % deserialize-fn) [it])))
 
 (defn post-captured-reference! [ref]
   (run-req!
@@ -101,11 +109,11 @@
    {:http-fn http/delete
     :url (api-url (str "articles/" id))}))
 
-;; !!!! TODO -> This guy should parse the response
 (defn get-review! [id]
   (run-req!
    {:http-fn http/get
-    :url (api-url (str "reviews/" id))}))
+    :url (api-url (str "reviews/" id))
+    :deserialize-fn reviews/server-resp->review}))
 
 (defn post-review! [spec]
   (run-req!
@@ -117,4 +125,5 @@
   (run-req!
    {:http-fn http/put
     :url (api-url (str "reviews/" id))
-    :json-params spec}))
+    :json-params spec
+    :deserialize-fn reviews/server-resp->review}))

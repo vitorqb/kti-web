@@ -95,7 +95,7 @@
 
 (deftest test-reduce-on-selection-submit
   (testing "Set's status on success"
-    (let [response {:data factories/review-server-resp}]
+    (let [response {:data factories/review}]
       (is (= (rc/reduce-on-selection-submit {} response)
              {:loading? false
               :selection-status {:success-msg "SUCCESS"}
@@ -109,13 +109,11 @@
 
 (deftest test-reduce-on-edited-review-submit
   (testing "Set's status on success"
-    (let [response {:data factories/review-server-resp}]
+    (let [response {:data factories/review}]
       (is (= (rc/reduce-on-edited-review-submit {} response)
              {:loading? false
               :status {:success-msg "SUCCESS"}
-              :edited-review (-> factories/review-server-resp
-                                 reviews-models/server-resp->review
-                                 reviews-models/review->raw-spec)}))))
+              :edited-review (reviews-models/review->raw-spec factories/review)}))))
   (testing "Set's status on error"
     (let [response {:error? true :data {::a ::b}}]
       (is (= (rc/reduce-on-edited-review-submit {:edited-review ::a} response)
@@ -150,13 +148,16 @@
                ;; The app is loading
                (is (true? (get-in (comp1) [1 :loading?])))
                ;; The answer is given
-               (>! get-chan {:data factories/review-server-resp})
+               (>! get-chan {:data (reviews-models/server-resp->review
+                                    factories/review-server-resp)})
                (is (= :done (<! resp-chan)))
                ;; No longer loading
                (is (false? (get-in (comp1) [1 :loading?])))
                ;; and we have the edited-review set
                (is (= (get-in (comp1) [1 :edited-review])
-                      (reviews-models/review->raw-spec factories/review)))
+                      (-> factories/review-server-resp
+                          reviews-models/server-resp->review
+                          reviews-models/review->raw-spec)))
                (done))))))
 
 (deftest test-review-editor--on-selection-error
@@ -198,7 +199,7 @@
            ;; It is loading
            (is (true? (get-in (comp1) [1 :loading?])))
            ;; It receives the response
-           (>! put-chan {:data factories/review-server-resp})
+           (>! put-chan {:data factories/review})
            (is (= :done (<! edit-resp-chan)))
            ;; And is no longer loading
            (is (false? (get-in (comp1) [1 :loading?])))
@@ -208,9 +209,7 @@
                     (reviews-models/raw-spec->spec updated-review-raw-spec)]]))
            ;; And the response is set as edited response
            (is (= (get-in (comp1) [1 :edited-review])
-                  (-> factories/review-server-resp
-                      reviews-models/server-resp->review
-                      reviews-models/review->raw-spec)))
+                  (reviews-models/review->raw-spec factories/review)))
            ;; And status is success
            (is (= (get-in (comp1) [1 :status]) {:success-msg "SUCCESS"}))
            (done)))))))

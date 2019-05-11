@@ -41,11 +41,7 @@
   (assoc state
          :loading? false
          :selection-status (if error? {:errors data} {:success-msg "SUCCESS"})
-         :edited-review (when-not error? (-> data
-                                             ;; !!!! TODO This should happen at req level
-                                             ;; https://trello.com/c/oSHUa1xU
-                                             reviews-models/server-resp->review
-                                             reviews-models/review->raw-spec))))
+         :edited-review (when-not error? (reviews-models/review->raw-spec data))))
 
 (defn reduce-on-edited-review-submit
   "Handles when an user submits an edited review"
@@ -55,11 +51,7 @@
          :status (if error? {:errors data} {:success-msg "SUCCESS"})
          :edited-review (if error?
                           edited-review
-                          (-> data
-                              ;; !!!! TODO This should happen at req level
-                              ;; https://trello.com/c/oSHUa1xU
-                              reviews-models/server-resp->review
-                              reviews-models/review->raw-spec))))
+                          (reviews-models/review->raw-spec data))))
 
 (defn review-editor--inner
   "Pure component for editing review"
