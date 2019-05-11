@@ -1,7 +1,7 @@
 (ns kti-web.http-test
   (:require
    [cljs.test :refer-macros [is are deftest testing use-fixtures async]]
-   [cljs.core.async :refer [>! <! take! put! go chan close!]]
+   [cljs.core.async :refer [>! <! take! put! go chan close!] :as a]
    [kti-web.http :as rc]
    [kti-web.test-utils :as utils]
    [kti-web.state :as state]
@@ -84,6 +84,13 @@
            (go (>! http-fn-chan {:success true :body 1})
                (is (= {:data 1} (<! chan)))
                (done)))))
+
+(deftest test-run-req!-with-deserialization
+  (let [http-fn-chan (a/to-chan [{:success true :body 1}])
+        resp-chan (rc/run-req! {:http-fn (constantly http-fn-chan)
+                                :deserialize-fn inc})]
+    (async done (go (is (= (<! resp-chan) {:data 2}))
+                    (done)))))
 
 (deftest test-run-req!-error
   (let [http-fn-chan (chan)
