@@ -11,6 +11,7 @@
 
 (deftest test-review-editor-form
   (let [mount rc/review-editor-form
+        mount-get-in #(-> %1 mount (get-in %2))
         get-id-input-props #(get-in % [2 1])
         get-id-article-input-props #(get-in % [3 1])
         get-feedback-text-input-props #(get-in % [4 1])
@@ -25,21 +26,14 @@
     (testing "Id disabled"
       (is (true? (-> {} mount get-id-input-props :disabled))))
     (testing "Article id value"
-      (is (= (-> {:edited-review {:id-article 99}}
-                 mount
-                 get-id-article-input-props
-                 :value)
-             99)))
+      (is (= (mount-get-in {:edited-review {:id-article 99}} [3 1 :value]) 99)))
     (testing "Article id on-change"
       (let [[args fun] (utils/args-saver)
             comp (mount {:edited-review {::a ::b} :on-edited-review-change fun})]
         ((-> comp get-id-article-input-props :on-change) 81)
         (is (= @args [[{::a ::b :id-article 81}]]))))
     (testing "Feedback text value"
-      (is (= (-> {:edited-review {:feedback-text "foo"}}
-                 mount
-                 get-feedback-text-input-props
-                 :value)
+      (is (= (mount-get-in {:edited-review {:feedback-text "foo"}} [4 1 :value])
              "foo")))
     (testing "Feedback Text on-change"
       (let [[args fun] (utils/args-saver)
@@ -47,10 +41,7 @@
         ((-> comp get-feedback-text-input-props :on-change) "bar")
         (is (= @args [[{::a ::b :feedback-text "bar"}]]))))
     (testing "Status value"
-      (is (= (-> {:edited-review {:status :in-progress}}
-                 mount
-                 get-status-input-props
-                 :value)
+      (is (= (mount-get-in {:edited-review {:status :in-progress}} [5 1 :value])
              :in-progress)))
     (testing "Status on-change"
       (let [[args fun] (utils/args-saver)
