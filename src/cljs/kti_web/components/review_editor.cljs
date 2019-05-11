@@ -5,7 +5,8 @@
    [kti-web.models.reviews :as reviews-models]
    [kti-web.utils :as utils :refer [join-vecs]]
    [kti-web.utilsc :refer-macros [go-with-done-chan]]
-   [kti-web.components.utils :as components-utils :refer [input]]))
+   [kti-web.components.utils :as components-utils :refer [input]]
+   [kti-web.components.review-selector :refer [review-selector]]))
 
 (def inputs (assoc reviews-models/inputs :id [input {:disabled true :text "Id"}]))
 
@@ -21,19 +22,6 @@
                  new-props {:key k :value value :on-change #(on-change k %)}]]
        [comp (merge props new-props (when loading? {:disabled true}))])
      [[components-utils/submit-button]])))
-
-(defn review-selector
-  "Selector for a review"
-  [{:keys [on-review-selection-submit selected-review-id
-           on-selected-review-id-change selection-status]}]
-  [:form {:on-submit (utils/call-prevent-default #(on-review-selection-submit))}
-   [input {:text "Review Id: "
-           :type "number"
-           :value selected-review-id
-           :on-change on-selected-review-id-change
-           :width 120}]
-   [components-utils/submit-button]
-   [components-utils/errors-displayer {:status selection-status}]])
 
 (defn reduce-on-selection-submit
   "Handles when an user submits a selection"
