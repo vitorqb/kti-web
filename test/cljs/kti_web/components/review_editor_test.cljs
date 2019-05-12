@@ -77,32 +77,36 @@
              [review-selector {::a ::b}])))))
 
 (deftest test-reduce-on-selection-submit
-  (testing "Set's status on success"
-    (let [response {:data factories/review}]
-      (is (= (rc/reduce-on-selection-submit {} response)
-             {:loading? false
-              :selection-status {:success-msg "SUCCESS"}
-              :edited-review (reviews-models/review->raw-spec factories/review)}))))
-  (testing "Set's error on failure"
-    (let [response {:error? true :data {::a ::b}}]
-      (is (= (rc/reduce-on-selection-submit {} response)
-             {:loading? false
-              :selection-status {:errors {::a ::b}}
-              :edited-review nil})))))
+  (let [reduce (:r-after rc/review-selection-submit)
+        review factories/review]
+    (testing "Set's status on success"
+      (let [response {:data review}]
+        (is (= (reduce {} {} response)
+               {:loading? false
+                :selection-status {:success-msg "SUCCESS"}
+                :edited-review (reviews-models/review->raw-spec review)}))))
+    (testing "Set's error on failure"
+      (let [response {:error? true :data {::a ::b}}]
+        (is (= (reduce {} {} response)
+               {:loading? false
+                :selection-status {:errors {::a ::b}}
+                :edited-review nil}))))))
 
 (deftest test-reduce-on-edited-review-submit
-  (testing "Set's status on success"
-    (let [response {:data factories/review}]
-      (is (= (rc/reduce-on-edited-review-submit {} response)
-             {:loading? false
-              :status {:success-msg "SUCCESS"}
-              :edited-review (reviews-models/review->raw-spec factories/review)}))))
-  (testing "Set's status on error"
-    (let [response {:error? true :data {::a ::b}}]
-      (is (= (rc/reduce-on-edited-review-submit {:edited-review ::a} response)
-             {:loading? false
-              :status {:errors {::a ::b}}
-              :edited-review ::a})))))
+  (let [reduce (:r-after rc/edited-review-submit)
+        review factories/review]
+    (testing "Set's status on success"
+      (let [response {:data review}]
+        (is (= (reduce {} {} response)
+               {:loading? false
+                :status {:success-msg "SUCCESS"}
+                :edited-review (reviews-models/review->raw-spec review)}))))
+    (testing "Set's status on error"
+      (let [response {:error? true :data {::a ::b}}]
+        (is (= (reduce {:edited-review ::a} {} response)
+               {:loading? false
+                :status {:errors {::a ::b}}
+                :edited-review ::a}))))))
 
 (deftest test-review-editor
   (let [mount rc/review-editor]

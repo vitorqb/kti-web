@@ -15,7 +15,8 @@
             [kti-web.components.review-creator-test]
             [kti-web.models.reviews-test]
             [kti-web.utils-test]
-            [kti-web.components.review-selector-test]))
+            [kti-web.components.review-selector-test]
+            [kti-web.event-handlers-test]))
 
 (doo-tests 'kti-web.core-test
            'kti-web.http-test
@@ -32,4 +33,5 @@
            'kti-web.components.review-creator-test
            'kti-web.models.reviews-test
            'kti-web.utils-test
-           'kti-web.components.review-selector-test)
+           'kti-web.components.review-selector-test
+           'kti-web.event-handlers-test)

@@ -6,7 +6,8 @@
    [kti-web.utils :as utils :refer [join-vecs]]
    [kti-web.utilsc :refer-macros [go-with-done-chan]]
    [kti-web.components.utils :as components-utils :refer [input]]
-   [kti-web.components.review-selector :refer [review-selector]]))
+   [kti-web.components.review-selector :refer [review-selector]]
+   [kti-web.event-handlers :refer [gen-handler]]))
 
 (def inputs (assoc reviews-models/inputs :id [input {:disabled true :text "Id"}]))
 
@@ -23,24 +24,6 @@
        [comp (merge props new-props (when loading? {:disabled true}))])
      [[components-utils/submit-button]])))
 
-(defn reduce-on-selection-submit
-  "Handles when an user submits a selection"
-  [state {:keys [error? data] :as response}]
-  (assoc state
-         :loading? false
-         :selection-status (if error? {:errors data} {:success-msg "SUCCESS"})
-         :edited-review (when-not error? (reviews-models/review->raw-spec data))))
-
-(defn reduce-on-edited-review-submit
-  "Handles when an user submits an edited review"
-  [{:keys [edited-review] :as state} {:keys [error? data] :as response}]
-  (assoc state
-         :loading? false
-         :status (if error? {:errors data} {:success-msg "SUCCESS"})
-         :edited-review (if error?
-                          edited-review
-                          (reviews-models/review->raw-spec data))))
-
 (defn review-editor--inner
   "Pure component for editing review"
   [props]
@@ -51,35 +34,49 @@
    [components-utils/errors-displayer props]
    [components-utils/success-message-displayer props]])
 
+(def edited-review-submit
+  {:r-before #(assoc % :loading? true :status {})
+   :action
+   (fn [{:keys [selected-review-id edited-review]} {:keys [put-review!]}]
+     (-> edited-review
+         (dissoc :id)
+         reviews-models/raw-spec->spec
+         (->> (put-review! selected-review-id))))
+   :r-after
+   (fn [{:keys [edited-review] :as state} _ {:keys [error? data] :as response}]
+     (assoc state
+            :loading? false
+            :status (if error? {:errors data} {:success-msg "SUCCESS"})
+            :edited-review (if error?
+                             edited-review
+                             (reviews-models/review->raw-spec data))))})
+
+(def review-selection-submit
+  {:r-before
+   #(assoc % :loading? true :edited-review nil :status {} :selection-status {})
+   :action
+   (fn [{:keys [selected-review-id]} {:keys [get-review!]}]
+     (get-review! selected-review-id))
+   :r-after
+   (fn [state _ {:keys [error? data]}]
+     (assoc state
+            :loading? false
+            :selection-status (if error? {:errors data} {:success-msg "SUCCESS"})
+            :edited-review (when-not error?
+                             (reviews-models/review->raw-spec data))))})
+
 (defn review-editor
-  [{:keys [get-review! put-review!]}]
-  (let [state (r/atom {:status {}
-                       :selection-status {}
-                       :selected-review-id nil
-                       :edited-review nil
-                       :loading? false})
-        handle-review-selection-submit
-        (fn []
-          (swap! state assoc :loading? true :edited-review nil :selection-status {})
-          (let [get-chan (get-review! (:selected-review-id @state))]
-            (go-with-done-chan
-             (swap! state reduce-on-selection-submit (<! get-chan)))))
-        handle-edited-review-submit
-        (fn []
-          (swap! state assoc :loading? true :status {})
-          (let [{:keys [selected-review-id edited-review]} @state
-                put-chan (put-review!
-                          selected-review-id
-                          (-> edited-review
-                              (dissoc :id)
-                              reviews-models/raw-spec->spec))]
-            (go-with-done-chan
-             (swap! state reduce-on-edited-review-submit (<! put-chan)))))]
+  [{:keys [get-review! put-review!] :as props}]
+  (let [state (r/atom {:status {} :selection-status {} :selected-review-id nil
+                       :edited-review nil :loading? false})]
     (fn []
       [review-editor--inner
-       (assoc @state
-              :on-selected-review-id-change
-              #(swap! state assoc :selected-review-id % :edited-review nil)
-              :on-review-selection-submit handle-review-selection-submit
-              :on-edited-review-change #(swap! state assoc :edited-review %)
-              :on-edited-review-submit handle-edited-review-submit)])))
+       (assoc
+        @state
+        :on-selected-review-id-change
+        #(swap! state assoc :selected-review-id % :edited-review nil :status nil)
+        :on-review-selection-submit
+        (gen-handler state props review-selection-submit)
+        :on-edited-review-change #(swap! state assoc :edited-review %)
+        :on-edited-review-submit
+        (gen-handler state props edited-review-submit))])))
