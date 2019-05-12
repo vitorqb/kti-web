@@ -61,50 +61,53 @@
              [components-utils/errors-displayer {:status ::a}])))))
 
 (deftest test-reduce-before-review-selection-submit
-  (is (= (rc/reduce-before-review-selection-submit {:deleted-reviews ::a})
-         {:deleted-reviews ::a
-          :loading? true
-          :status {}
-          :selection-status {}
-          :selected-review nil})))
-
-(deftest test-reduce-on-review-selection-submit
-  (let [state {:deleted-reviews ::a}
-        resp {:error? false :data ::b}]
-    (is (= (rc/reduce-on-review-selection-submit state resp)
+  (let [reduce (rc/review-selection-submit :r-before)]
+    (is (= (reduce {:deleted-reviews ::a} nil)
            {:deleted-reviews ::a
-            :loading? false
+            :loading? true
             :status {}
-            :selection-status {:success-msg "Success"}
-            :selected-review ::b})))
-  (let [state {:deleted-reviews ::a}
-        resp {:error? true :data ::b}]
-    (is (= (rc/reduce-on-review-selection-submit state resp)
-           {:deleted-reviews ::a
-            :loading? false
-            :status {}
-            :selection-status {:errors ::b}
+            :selection-status {}
             :selected-review nil}))))
 
+(deftest test-reduce-on-review-selection-submit
+  (let [reduce (rc/review-selection-submit :r-after)]
+    (let [state {:deleted-reviews ::a}
+          resp {:error? false :data ::b}]
+      (is (= (reduce state {} resp)
+             {:deleted-reviews ::a
+              :loading? false
+              :status {}
+              :selection-status {:success-msg "Success"}
+              :selected-review ::b})))
+    (let [state {:deleted-reviews ::a}
+          resp {:error? true :data ::b}]
+      (is (= (reduce state {} resp)
+             {:deleted-reviews ::a
+              :loading? false
+              :status {}
+              :selection-status {:errors ::b}
+              :selected-review nil})))))
+
 (deftest test-reduce-before-delete-review-submit
-  (is (= (rc/reduce-before-delete-review-submit {})
-         {:loading? true :status {}})))
+  (let [reduce (:r-before rc/delete-review-submit)]
+    (is (= (reduce {} {}) {:loading? true :status {}}))))
 
 (deftest test-reduce-on-delete-review-submit
-  (let [state {:deleted-reviews [] :selected-review ::a}
-        resp {:data {}}]
-    (is (= (rc/reduce-on-delete-review-submit state resp)
-           {:loading? false
-            :status {:success-msg "Deleted!"}
-            :selected-review nil
-            :deleted-reviews [::a]})))
-  (let [state {:deleted-reviews [] :selected-review ::a}
-        resp {:error? true :data ::b}]
-    (is (= (rc/reduce-on-delete-review-submit state resp)
-           {:loading? false
-            :status {:errors ::b}
-            :selected-review ::a
-            :deleted-reviews []}))))
+  (let [reduce (:r-after rc/delete-review-submit)]
+    (let [state {:deleted-reviews [] :selected-review ::a}
+          resp {:data {}}]
+      (is (= (reduce state nil resp)
+             {:loading? false
+              :status {:success-msg "Deleted!"}
+              :selected-review nil
+              :deleted-reviews [::a]})))
+    (let [state {:deleted-reviews [] :selected-review ::a}
+          resp {:error? true :data ::b}]
+      (is (= (reduce state nil resp)
+             {:loading? false
+              :status {:errors ::b}
+              :selected-review ::a
+              :deleted-reviews []})))))
 
 (deftest test-review-deletor
   (let [mount rc/review-deletor]
