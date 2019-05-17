@@ -11,12 +11,13 @@
    {:value      {:value value :label value}
     :options    (map (fn [x] {:value x :label x}) options)
     :on-change  #(-> % js->clj (get "value") on-change)
-    :isDisabled (or disabled false)}])
+    :isDisabled (or disabled false)
+    :styles {:container #(-> %1 js->clj (assoc :max-width 350) clj->js)}}])
 
 (defn select
   "A select component. Options must be an array of strings."
   [{:keys [text options value on-change disabled]}]
-  [:<>
+  [:div.select-div
    [:span text]
    [select-wrapper
     {:options options
@@ -27,7 +28,7 @@
 (defn input
   "A generic input component"
   [{:keys [text type disabled width value on-change]}]
-  [:<>
+  [:div
    [:span text]
    [:input {:style {:width (or width 600)}
             :value value
@@ -38,7 +39,7 @@
 (defn textarea
   "A textarea component"
   [{:keys [text disabled rows cols value on-change]}]
-  [:<>
+  [:div
    [:span text]
    [:textarea {:rows (or rows 5)
                :cols (or cols 73)

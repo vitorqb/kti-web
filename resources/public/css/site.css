@@ -1,6 +1,6 @@
 .body-container {
   font-family: 'Helvetica Neue', Verdana, Helvetica, Arial, sans-serif;
-  max-width: 600px;
+  max-width: 1200px;
   -webkit-font-smoothing: antialiased;
   font-size: 1.125em;
   color: #333;
@@ -33,4 +33,13 @@ a:hover {
 
 .errors-displayer {
     background-color: red
+}
+
+.select-div {
+    display: inline-block;
+    width: 100%;
+}
+
+.select-div span {
+    float: left
 }
