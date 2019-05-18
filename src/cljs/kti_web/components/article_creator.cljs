@@ -5,7 +5,6 @@
    [kti-web.utils
     :refer [call-with-val call-prevent-default]
     :as utils]
-   [kti-web.utilsc :refer-macros [go-with-done-chan]]
    [kti-web.models.articles :as articles]
    [kti-web.components.utils :refer [input submit-button] :as components-utils]))
 
@@ -53,13 +52,14 @@
                               :article-spec
                               articles/serialize-article-spec
                               hpost!)]
-            (go-with-done-chan
+            (go
              (swap! state assoc :status {})
              (let [{:keys [error? data]} (<! resp-chan)]
                (swap! state assoc :status
                       (if error?
                         {:errors data}
-                        {:success-msg (make-success-msg data)}))))))]
+                        {:success-msg (make-success-msg data)})))
+             :done)))]
     (fn []
       (let [{:keys [article-spec status]} @state]
         [article-creator--inner

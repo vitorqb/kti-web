@@ -3,7 +3,6 @@
    [reagent.core :refer [atom] :as r]
    [cljs.core.async :refer [go <! >!] :as async]
    [kti-web.utils :as utils]
-   [kti-web.utilsc :refer-macros [go-with-done-chan]]
    [kti-web.components.utils :as components-utils :refer [input]]))
 
 (def initial-state
@@ -59,8 +58,9 @@
           (let [{:keys [delete-article-id]} @state]
             (swap! state reduce-before-article-deletion)
             (let [resp-chan (delete-article! delete-article-id)]
-              (go-with-done-chan
-               (swap! state (reduce-after-article-deletion (<! resp-chan)))))))]
+              (go
+                (swap! state (reduce-after-article-deletion (<! resp-chan)))
+                :done))))]
     (fn []
       [article-deletor--inner
        (merge
