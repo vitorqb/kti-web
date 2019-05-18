@@ -15,7 +15,7 @@
   [{:keys [article-spec on-article-spec-update on-article-creation-submit]}]
   (letfn [(change-handler [k] #(on-article-spec-update (assoc article-spec k %)))]
     [:form {:on-submit (call-prevent-default #(on-article-creation-submit))}
-     [:h3 "Create Article"]
+     [:h4 "Create Article"]
      [input
       {:text "Id Captued Reference"
        :type "number"

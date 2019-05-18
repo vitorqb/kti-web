@@ -38,7 +38,7 @@
            on-edit-cap-ref-submit loading? toggle-loading]
     :as props}]
   [:div
-   [:h3 "Edit Captured Reference Form"]
+   [:h4 "Edit Captured Reference Form"]
    [select-captured-ref
     {:get-captured-ref get-captured-ref
      :on-selection on-cap-ref-selection

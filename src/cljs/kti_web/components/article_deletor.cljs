@@ -17,7 +17,7 @@
            on-delete-article-id-submit loading?]
     :as specs}]
   [:div {}
-   [:h3 "Delete Article"]
+   [:h4 "Delete Article"]
    (if loading?
      [:div "Loading..."]
      [:form {:on-submit (utils/call-prevent-default #(on-delete-article-id-submit))}

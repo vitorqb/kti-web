@@ -28,7 +28,7 @@
   "Pure component for deleting a review"
   [{:keys [selected-review] :as props}]
   [:div {}
-   [:h3 "Delete Review"]
+   [:h4 "Delete Review"]
    [review-selector props]
    (when selected-review [review-displayer props])
    (when selected-review [delete-button props])
