@@ -6,8 +6,8 @@
   "Generates a handler for an event.
   The handler will:
   1) Reduce some state `state` before an action.
-  2) Run an action and get a reference with it's results.
-  3) Reduce `state` with the action result dereferenced."
+  2) Run an action and get a channel with it's results.
+  3) Reduce `state` with the first item on the action result channel."
   [state extra-args {:keys [r-before action r-after]}]
   (fn []
     (let [init-state @state]

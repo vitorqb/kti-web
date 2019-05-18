@@ -1,6 +1,8 @@
 (ns kti-web.components.captured-reference-table
   (:require [cljs.core.async :refer [<! >! go]]
             [kti-web.utils :as utils :refer [js-alert]]
+            [kti-web.components.utils :as components-utils]
+            [kti-web.event-handlers :refer [gen-handler]]
             [reagent.core :as r]))
 
 (def columns
@@ -31,47 +33,31 @@
 
 (defn captured-refs-table-inner
   "Pure component for a table of captured references."
-  [{:keys [loading? refs fn-refresh!]}]
-  (let [headers ["id" "ref" "created at" "classified?"]]
-    [:div
-     [:h3 "Captured References Table"]
-     [:button {:on-click #(fn-refresh!)} "Update"]
-     (if loading?
-       [:div "LOADING..."]
-       [:table
-        (make-thead columns)
-        (->> refs (sort-by :created-at) reverse (make-tbody columns))])]))
+  [{:keys [loading? refs fn-refresh!] :as props}]
+  [:div
+   [:h3 "Captured References Table"]
+   [:button {:on-click #(fn-refresh!)} "Update"]
+   (if loading?
+     [:div "LOADING..."]
+     [:table
+      (make-thead columns)
+      (->> refs (sort-by :created-at) reverse (make-tbody columns))])
+   [components-utils/errors-displayer props]])
 
-(def initial-state
-  "The initial state for the captured reference table."
-  {:loading? true :refs nil})
+(defonce state (r/atom {:loading? true :refs nil :status {}}))             
 
-(defn- reduce-before-get-all-captured-references
-  [state]
-  (assoc state :loading? true :refs nil))
+(def refresh
+  {:r-before (fn [state {}] (assoc state :loading? true :refs nil :status {}))
+   :action (fn [_ {:keys [get!]}] (get!))
+   :r-after
+   (fn [state {:keys [c-done]} {:keys [error? data]}]
+     (and c-done (go (>! c-done 1)))
+     (assoc state
+            :loading? false
+            :status (if error? {:errors data}  {:success-msg "Success!"})
+            :refs (when-not error? data)))})
 
-(defn- reduce-get-all-captured-references-response
-  [{:keys [error? data] :as resp}]
-  (fn [state]
-    ;; !!!! TODO -> Use error component in utils and not js-alert
-    (if error?
-      (do
-        (js-alert (str "Error during get: " (:ROOT data)))
-        (assoc state :loading? false :refs []))
-      (assoc state :loading? false :refs data))))
-
-(defn captured-refs-table [{:keys [get! c-done]}]
-  (let [state (r/atom initial-state)
-        run-get!
-        (fn []
-          (swap! state reduce-before-get-all-captured-references)
-          (let [get-chan (get!)]
-            (go
-              (->> get-chan
-                   <!
-                   reduce-get-all-captured-references-response
-                   (swap! state))
-              (and c-done (>! c-done 1)))))]
-    (run-get!)
-    (fn []
-      [captured-refs-table-inner (assoc @state :fn-refresh! run-get!)])))
+(defn captured-refs-table [{:keys [get! c-done] :as props}]
+  (let [run-get! (gen-handler state props refresh)]
+    (when (nil? (@state :refs)) (run-get!))
+    (fn [] [captured-refs-table-inner (assoc @state :fn-refresh! run-get!)])))
