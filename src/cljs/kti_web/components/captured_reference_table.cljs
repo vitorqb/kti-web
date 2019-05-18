@@ -7,11 +7,13 @@
 
 (def columns
   "An array of maps describing the table columns."
-  [{:head-text "id"          :fn-get :id}
-   {:head-text "ref"         :fn-get :reference}
-   {:head-text "created at"  :fn-get :created-at}
-   {:head-text "classified?" :fn-get (comp str :classified)}
-   {:head-text "article id"  :fn-get :article-id}])
+  [{:head-text "Id"          :fn-get :id}
+   {:head-text "Reference"   :fn-get :reference}
+   {:head-text "Created At"  :fn-get :created-at}
+   {:head-text "Classified?" :fn-get (comp str :classified)}
+   {:head-text "Article Id"  :fn-get :article-id}
+   {:head-text "Review Id"   :fn-get :review-id}
+   {:head-text "Rev. status" :fn-get :review-status}])
 
 (defn- make-thead
   "Prepares a thead for the table, given an array of columns."
