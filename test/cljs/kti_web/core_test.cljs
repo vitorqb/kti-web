@@ -5,6 +5,8 @@
    [kti-web.core :as rc]
    [kti-web.http :as http]
    [kti-web.utils]
+   [kti-web.state :as state]
+   [kti-web.components.utils :as component-utils]
    [kti-web.test-utils :as utils :refer [args-saver]]
    [kti-web.test-factories :as factories]
    [cljs.core.async :refer [>! <! take! put! go chan close!]]))
@@ -42,25 +44,18 @@
     (fn [c div]
       (is (found-in #"Welcome to" div)))))
 
-(deftest test-host-input
-  (let [[on-change-args on-change] (args-saver)
-        comp (rc/host-input-inner {:on-change on-change :value "bar"})]
-    (testing "Inits with value"
-      (is (= (get-in comp [2 1 :value] "bar"))))
-    (testing "Calls onChange at input change"
-      ((get-in comp [2 1 :on-change]) (clj->js {:target {:value "foo"}}))
-      (is (= @on-change-args [["foo"]])))))
-
-(deftest test-token-input
-  (let [[on-change-args on-change] (args-saver)
-        comp (rc/token-input-inner {:on-change on-change :value "foo"})]
-    (testing "Mounts input"
-      (let [input (get comp 2)]
-        (is (= (first input) :input)
-            (= (get-in input [1 :value]) "foo"))))
-    (testing "Calls onChange on change"
-      ((get-in comp [2 1 :on-change]) (clj->js {:target {:value "BAR"}}))
-      (is (= @on-change-args [["BAR"]])))))
+(deftest test-home-page
+  (let [comp1 (rc/home-page)]
+    (testing "Set's host"
+      (is (= (get-in (comp1) [2 2 0]) component-utils/input))
+      ((get-in (comp1) [2 2 1 :on-change]) "foo")
+      (is (= @state/host "foo"))
+      (is (= (get-in (comp1) [2 2 1 :value]) "foo")))
+    (testing "Set's token"
+      (is (= (get-in (comp1) [2 3 0]) component-utils/input))
+      ((get-in (comp1) [2 3 1 :on-change]) "bar")
+      (is (= @state/token "bar"))
+      (is (= (get-in (comp1) [2 3 1 :value]) "bar")))))
 
 (deftest test-capture-input
   (testing "Calls callback on change"
