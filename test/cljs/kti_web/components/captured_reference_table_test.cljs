@@ -38,7 +38,18 @@
       (let [refs [factories/captured-ref] comp (mount {:refs refs})]
         (is (= (get-tbody comp) (make-tbody rc/columns refs)))))))
 
-(deftest test-captured-refs-table--renders-inner-component-with-get-data
+(deftest test-refresh
+  (testing "r-before"
+    (let [r-before (:r-before rc/refresh)]
+      (is (= (r-before {::a ::b} {}) {::a ::b :loading? true :refs nil :status {}}))))
+  (testing "r-after"
+    (let [r-after (:r-after rc/refresh)]
+      (is (= (r-after {::a ::b} {} {:error? true :data ::c})
+             {::a ::b :loading? false :status {:errors ::c} :refs nil}))
+      (is (= (r-after {::a ::b} {} {:data ::c})
+             {::a ::b :loading? false :status {:success-msg "Success!"} :refs ::c})))))
+
+(deftest test-captured-refs-table--integration
   (let [mount rc/captured-refs-table
         get-chan (async/timeout 2000)
         done-chan (async/timeout 2000)]
@@ -46,7 +57,7 @@
       ;; First state must be while loading
       (is (= (get (comp1) 0) rc/captured-refs-table-inner))
       (is (= (-> (comp1) (get 1) (dissoc :fn-refresh!))
-             {:loading? true :refs nil}))
+             {:loading? true :refs nil :status {}}))
       (async
        done
        (go
@@ -55,24 +66,21 @@
          (is (= (<! done-chan) 1))
          ;; And the new state is set
          (is (= (-> (comp1) (get 1) (dissoc :fn-refresh!))
-                {:loading? false :refs [factories/captured-ref]}))
+                {:loading? false
+                 :status {:success-msg "Success!"}
+                 :refs [factories/captured-ref]}))
+         ;; The user refreshes
+         ((get-in (comp1) [1 :fn-refresh!]))
+         ;; We are loading again
+         (is (= (-> (comp1) (get 1) (dissoc :fn-refresh!))
+                {:loading? true :status {} :refs nil}))
+         ;; An error is returned
+         (>! get-chan {:error? true :data {::some "error"}})
+         ;; It ends
+         (is (= (<! done-chan) 1))
+         ;; And we see the error there
+         (is (= (-> (comp1) (get 1) (dissoc :fn-refresh!))
+                {:loading? false
+                 :status {:errors {::some "error"}}
+                 :refs nil}))
          (done))))))
-
-(deftest test-captured-refs-table--alerts-on-error
-  (let [req-chan (chan)
-        done-chan (chan)
-        error (http/parse-response factories/http-response-error-msg)
-        comp-1 (rc/captured-refs-table
-                {:get! (constantly req-chan) :c-done done-chan})]
-    (async done
-           (go
-             ;; Captures js/alert
-             (let [[js-alert-args js-alert] (utils/args-saver)]
-               (with-redefs [kti-web.utils/js-alert js-alert]
-                 ;; Requests returns an error
-                 (>! req-chan error)
-                 (<! done-chan)
-                 ;; That was passed to js/alert
-                 (is (= @js-alert-args
-                        [[(str "Error during get: " (get-in error [:data :ROOT]))]]))
-                 (done)))))))
