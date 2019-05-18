@@ -30,6 +30,10 @@ curl -H 'Content-Type: application/json' --data '{"email": "<your-email>"}' 159.
 
 You will receive an email with the token.
 
+## Minimum kti version
+As of now the minimum version is 1.4.3.
+https://github.com/vitorqb/kti/releases/tag/1.4.3
+
 ## Development mode
 
 The project uses figwheel-main (https://github.com/bhauman/figwheel-main) for development builds.
