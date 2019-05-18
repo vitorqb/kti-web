@@ -48,7 +48,7 @@
   "Pure component for editting an article"
   [{:keys [loading? raw-editted-article] :as props}]
   [:div
-   [:h3 "Edit Article"]
+   [:h4 "Edit Article"]
    (if loading?
      [:div "Loading..."]
      [:div

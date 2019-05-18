@@ -28,7 +28,7 @@
   "Pure component for editing review"
   [props]
   [:div
-   [:h3 "Edit Review"]
+   [:h4 "Edit Review"]
    [review-selector props]
    (when (:edited-review props) [review-editor-form props])
    [components-utils/errors-displayer props]

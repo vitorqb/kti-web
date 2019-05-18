@@ -46,7 +46,9 @@
     ["/items"
      ["" :items]
      ["/:item-id" :item]]
-    ["/about" :about]]))
+    ["/about" :about]
+    ["/article" :article]
+    ["/review" :review]]))
 
 (defn path-for [route & [params]]
   (if params
@@ -62,29 +64,19 @@
     [:span.main
      [:h1 "Welcome to kti-web"]
      [:div
-      [:h2 "Options"]
+      [:h3 "Options"]
       [input {:text "Host: " :value @host :on-change #(reset! host %)}]
       [input {:text "Token: "
               :value @token
               :on-change #(reset! token %)
               :type "password"}]]
      [:div
-      [:h2 "Captured References"]
+      [:h3 "Captured References"]
       [capture-form {:post! post-captured-reference!}]
+      [captured-refs-table {:get! get-captured-references!}]
       [edit-captured-ref-comp {:hput! put-captured-reference!
                                :hget! get-captured-reference!}]
-      [delete-captured-ref-form {:delete! delete-captured-reference!}]
-      [captured-refs-table {:get! get-captured-references!}]]
-     [:div
-      [:h2 "Articles!"]
-      [article-creator {:hpost! post-article!}]
-      [article-editor {:get-article! get-article! :put-article! put-article!}]
-      [article-deletor {:delete-article! delete-article!}]]
-     [:div
-      [:h2 "Reviews"]
-      [review-creator {:post-review! post-review!}]
-      [review-editor {:get-review! get-review! :put-review! put-review!}]
-      [review-deletor {:get-review! get-review! :delete-review! delete-review!}]]]))
+      [delete-captured-ref-form {:delete! delete-captured-reference!}]]]))
 
 (defn capture-input [{:keys [on-change value]}]
   [:div
@@ -96,7 +88,7 @@
 
 (defn capture-form-inner [{:keys [loading? value result on-submit on-change]}]
   [:div
-   [:h3 "Capture Form"]
+   [:h4 "Capture Form"]
    [:form
     {:on-submit on-submit}
     [capture-input {:value value :on-change on-change}]
@@ -127,7 +119,7 @@
   (let [handle-submit #(delete! ref-id)]
     [:div
      [:form {:on-submit (call-prevent-default handle-submit)}
-      [:h3 "Delete Captured Ref. Form"]
+      [:h4 "Delete Captured Ref. Form"]
       [:span "Ref Id: "]
       [:input {:type "number" :value ref-id
                :on-change (call-with-val update-ref-id!)}]
@@ -172,6 +164,25 @@
   (fn [] [:span.main
           [:h1 "About kti-web"]]))
 
+(defn article-page
+  "A page for articles =D"
+  []
+  (fn []
+    [:div
+     [:h3 "Articles!"]
+     [article-creator {:hpost! post-article!}]
+     [article-editor {:get-article! get-article! :put-article! put-article!}]
+     [article-deletor {:delete-article! delete-article!}]]))
+
+(defn review-page
+  "A page for reviews =D"
+  []
+  [:div
+   [:h3 "Reviews"]
+   [review-creator {:post-review! post-review!}]
+   [review-editor {:get-review! get-review! :put-review! put-review!}]
+   [review-deletor {:get-review! get-review! :delete-review! delete-review!}]])
+
 ;; -------------------------
 ;; Translate routes -> page components
 
@@ -180,7 +191,9 @@
     :index #'home-page
     :about #'about-page
     :items #'items-page
-    :item #'item-page))
+    :item #'item-page
+    :article #'article-page
+    :review #'review-page))
 
 ;; -------------------------
 ;; Page mounting component
@@ -190,7 +203,10 @@
     (let [page (:current-page (session/get :route))]
       [:div
        [:header
-        [:p [:a {:href (path-for :index)} "Home"] " | "
+        [:p
+         [:a {:href (path-for :index)} "Home"] " | "
+         [:a {:href (path-for :article)} "Articles"] " | "
+         [:a {:href (path-for :review)} "Reviews"] " | "
          [:a {:href (path-for :about)} "About kti-web"]]]
        [page]])))
 

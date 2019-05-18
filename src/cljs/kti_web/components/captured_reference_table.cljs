@@ -37,7 +37,7 @@
   "Pure component for a table of captured references."
   [{:keys [loading? refs fn-refresh!] :as props}]
   [:div
-   [:h3 "Captured References Table"]
+   [:h4 "Captured References Table"]
    [:button {:on-click #(fn-refresh!)} "Update"]
    (if loading?
      [:div "LOADING..."]

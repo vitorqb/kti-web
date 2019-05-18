@@ -7,7 +7,7 @@
 
 (def mount-target
   [:div#app
-   [:h2 "Welcome to kti-web"]
+   [:h3 "Welcome to kti-web"]
    [:p "please wait while Figwheel is waking up ..."]
    [:p "(Check the js console for hints if nothing exсiting happens.)"]])
 
@@ -39,7 +39,9 @@
       ["" {:get {:handler index-handler}}]
       ["/:item-id" {:get {:handler index-handler
                           :parameters {:path {:item-id int?}}}}]]
-     ["/about" {:get {:handler index-handler}}]])
+     ["/about" {:get {:handler index-handler}}]
+     ["/article" {:get {:handler index-handler}}]
+     ["/review" {:get {:handler index-handler}}]])
    (reitit-ring/routes
     (reitit-ring/create-resource-handler {:path "/" :root "/public"})
     (reitit-ring/create-default-handler))

@@ -30,7 +30,7 @@
   "Pure component for review creation."
   [specs]
   [:div
-   [:h3 "Create Review"]
+   [:h4 "Create Review"]
    [review-creator-form specs]
    [components-utils/errors-displayer specs]
    [components-utils/success-message-displayer specs]])
