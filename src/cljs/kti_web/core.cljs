@@ -14,7 +14,7 @@
             [kti-web.components.edit-captured-reference-component
              :refer
              [edit-captured-ref-comp]]
-            [kti-web.components.utils :refer [submit-button]]
+            [kti-web.components.utils :refer [submit-button input]]
             [kti-web.http
              :refer
              [delete-article!
@@ -36,11 +36,7 @@
             [reagent.session :as session]
             [reitit.frontend :as reitit]))
 
-(declare
- capture-form
- delete-captured-ref-form
- token-input-inner
- host-input-inner)
+(declare capture-form delete-captured-ref-form)
 
 ;; -------------------------
 ;; Routes
@@ -67,8 +63,11 @@
      [:h1 "Welcome to kti-web"]
      [:div
       [:h2 "Options"]
-      [host-input-inner {:value @host :on-change #(reset! host %)}]
-      [token-input-inner {:value @token :on-change #(reset! token %)}]]
+      [input {:text "Host: " :value @host :on-change #(reset! host %)}]
+      [input {:text "Token: "
+              :value @token
+              :on-change #(reset! token %)
+              :type "password"}]]
      [:div
       [:h2 "Captured References"]
       [capture-form {:post! post-captured-reference!}]
@@ -86,16 +85,6 @@
       [review-creator {:post-review! post-review!}]
       [review-editor {:get-review! get-review! :put-review! put-review!}]
       [review-deletor {:get-review! get-review! :delete-review! delete-review!}]]]))
-
-(defn host-input-inner [{:keys [value on-change]}]
-  [:div
-   [:span "Host"]
-   [:input {:value value :on-change (call-with-val on-change)}]])
-
-(defn token-input-inner [{:keys [value on-change]}]
-  [:div
-   [:span "Token"]
-   [:input {:value value :on-change (call-with-val on-change) :type "password"}]])
 
 (defn capture-input [{:keys [on-change value]}]
   [:div
