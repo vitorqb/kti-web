@@ -2,7 +2,6 @@
   (:require
    [reagent.core :as r :refer [atom]]
    [kti-web.utils :as utils]
-   [kti-web.utilsc :refer-macros [go-with-done-chan]]
    [kti-web.models.articles :as articles]
    [kti-web.components.utils :as components-utils :refer [input]]
    [cljs.core.async :refer [chan <! >! put! go] :as async]))
@@ -127,11 +126,12 @@
         (fn []
           (swap! state reset-state-for-id-submit)
           (let [resp-chan (get-article! (:selected-article-id @state))]
-            (go-with-done-chan
+            (go
              (let [{:keys [error? data]} (<! resp-chan)]
                (swap! state (if error?
                               (set-state-on-id-submit-error data)
-                              (set-state-on-id-submit-success data)))))))
+                              (set-state-on-id-submit-success data))))
+             :done)))
         handle-edit-article-submit
         (fn []
           (swap! state reset-state-for-article-submit)
@@ -140,11 +140,12 @@
                   (put-article!
                    raw-editted-article-id
                    (articles/serialize-article-spec raw-editted-article)))]
-            (go-with-done-chan
-             (let [{:keys [error? data]} (<! resp-chan)]
-               (swap! state (if error?
-                              (set-state-on-edit-submit-error data)
-                              set-state-on-edit-submit-success))))))]
+            (go
+              (let [{:keys [error? data]} (<! resp-chan)]
+                (swap! state (if error?
+                               (set-state-on-edit-submit-error data)
+                               set-state-on-edit-submit-success)))
+              :done)))]
     (fn []
       [article-editor--inner
        (merge

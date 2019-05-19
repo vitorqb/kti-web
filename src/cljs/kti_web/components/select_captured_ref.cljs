@@ -4,7 +4,6 @@
    [kti-web.utils
     :refer [call-with-val call-prevent-default]
     :as utils]
-   [kti-web.utilsc :refer-macros [go-with-done-chan]]
    [kti-web.components.utils :refer [submit-button]]))
 
 (defn select-captured-ref
@@ -14,9 +13,10 @@
   (letfn [(handle-submit [e]
             (toggle-loading true)
             (let [cap-ref-chan (get-captured-ref id-value)]
-              (go-with-done-chan
+              (go
                (on-selection (<! cap-ref-chan))
-               (toggle-loading false))))]
+               (toggle-loading false)
+               :done)))]
     [:div
      [:form {:on-submit (call-prevent-default handle-submit)}
       [:span "Choose an id: "]

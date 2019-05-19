@@ -4,7 +4,6 @@
    [cljs.core.async :refer [<! >!]]
    [kti-web.models.reviews :as reviews-models]
    [kti-web.utils :as utils :refer [join-vecs]]
-   [kti-web.utilsc :refer-macros [go-with-done-chan]]
    [kti-web.components.utils :as components-utils :refer [input]]
    [kti-web.components.review-selector :refer [review-selector]]
    [kti-web.event-handlers :refer [gen-handler]]))

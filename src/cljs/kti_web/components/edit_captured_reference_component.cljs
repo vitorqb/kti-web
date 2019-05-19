@@ -6,8 +6,7 @@
     :refer [submit-button call-prevent-default input]
     :as components-utils]
    [kti-web.components.select-captured-ref :refer [select-captured-ref]]
-   [kti-web.utils :refer [call-prevent-default call-with-val to-str]]
-   [kti-web.utilsc :refer-macros [go-with-done-chan]]))
+   [kti-web.utils :refer [call-prevent-default call-with-val to-str]]))
 
 (def inputs
   {:id         [input {:text "Id" :disabled true :type "number"}]
@@ -75,13 +74,14 @@
                  :status {:edit-cap-ref {} :select-cap-ref {}})
           (let [{:keys [selected-cap-ref-id-value editted-cap-ref]} @state
                 resp-chan (hput! selected-cap-ref-id-value editted-cap-ref)]
-            (go-with-done-chan
+            (go
              (let [{:keys [error? data]} (<! resp-chan)]
                (swap! state assoc
                       :loading? false
                       :status {:edit-cap-ref (if error?
                                                {:errors data}
-                                               {:success-msg "Success!"})})))))
+                                               {:success-msg "Success!"})}))
+             :done)))
         handle-cap-ref-selection
         (fn [{:keys [error? data]}]
           (swap! state assoc

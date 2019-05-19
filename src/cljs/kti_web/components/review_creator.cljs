@@ -1,7 +1,6 @@
 (ns kti-web.components.review-creator
   (:require
    [kti-web.utils :as utils]
-   [kti-web.utilsc :refer-macros [go-with-done-chan]]
    [kti-web.components.utils :as components-utils]
    [kti-web.models.reviews :as review-models]
    [reagent.core :as r :refer [atom]]
@@ -61,13 +60,14 @@
   (let [state (atom initial-state)]
     (letfn [(handle-review-creation-submit []
               (swap! state reduce-before-review-creation-submit)
-              (go-with-done-chan
+              (go
                (->> @state
                     :review-raw-spec
                     review-models/raw-spec->spec
                     post-review!
                     <!
-                    (swap! state reduce-review-creation-submit-response))))]
+                    (swap! state reduce-review-creation-submit-response))
+               :done))]
       (fn []
         [review-creator-inner
          (assoc @state

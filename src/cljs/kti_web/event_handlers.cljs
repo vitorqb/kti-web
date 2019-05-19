@@ -1,6 +1,5 @@
 (ns kti-web.event-handlers
-  (:require [cljs.core.async :refer [<!]]
-            [kti-web.utilsc :refer-macros [go-with-done-chan]]))
+  (:require [cljs.core.async :refer [<! go]]))
 
 (defn gen-handler
   "Generates a handler for an event.
@@ -13,4 +12,5 @@
     (let [init-state @state]
       (swap! state r-before extra-args)
       (let [ctx-chan (action init-state extra-args)]
-        (go-with-done-chan (swap! state r-after extra-args (<! ctx-chan)))))))
+        (go (swap! state r-after extra-args (<! ctx-chan))
+            :done)))))
