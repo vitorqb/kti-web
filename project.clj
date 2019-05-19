@@ -25,7 +25,7 @@
 
   :plugins [[lein-environ "1.1.0"]
             [lein-cljsbuild "1.1.7"]
-            [lein-asset-minifier "0.2.7"
+            [lein-asset-minifier "0.4.6"
              :exclusions [org.clojure/clojure]]]
 
   :ring {:handler kti-web.handler/app :uberwar-name "kti-web.war"}
@@ -39,10 +39,8 @@
   :source-paths ["src/clj" "src/cljc" "src/cljs"]
   :resource-paths ["resources" "target/cljsbuild" "target/public"]
 
-  :minify-assets
-  {:assets
-   {"resources/public/css/site.min.css" "resources/public/css/site.css"}}
-
+  :minify-assets [[:css {:source "resources/public/css/site.css"
+                         :target "resources/public/css/site.min.css"}]]
   :cljsbuild
   {:builds {:min
             {:source-paths ["src/cljs" "src/cljc" "env/prod/cljs"]
