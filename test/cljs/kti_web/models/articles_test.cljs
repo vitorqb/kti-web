@@ -32,7 +32,8 @@
                    :description "Baz"
                    :action-link "Bum"}]
       (is (= (rc/article->raw article)
-             {:id-captured-reference "18"
+             {:id 8
+              :id-captured-reference "18"
               :tags "foo, bar"
               :description "Baz"
               :action-link "Bum"}))))

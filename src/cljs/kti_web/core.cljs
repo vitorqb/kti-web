@@ -2,6 +2,7 @@
   (:require [accountant.core :as accountant]
             [clerk.core :as clerk]
             [cljs.core.async :refer [<! >! go]]
+            [kti-web.components.article-viewer :refer [article-viewer]]
             [kti-web.components.article-creator :refer [article-creator]]
             [kti-web.components.article-deletor :refer [article-deletor]]
             [kti-web.components.article-editor :refer [article-editor]]
@@ -170,6 +171,7 @@
   (fn []
     [:div
      [:h3 "Articles!"]
+     [article-viewer {:get-article! get-article!}]
      [article-creator {:hpost! post-article!}]
      [article-editor {:get-article! get-article! :put-article! put-article!}]
      [article-deletor {:delete-article! delete-article!}]]))

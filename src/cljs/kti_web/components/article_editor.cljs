@@ -6,32 +6,23 @@
    [kti-web.components.utils :as components-utils :refer [input]]
    [cljs.core.async :refer [chan <! >! put! go] :as async]))
 
-(def inputs
-  {:id [input {:text "Id" :disabled true}]
-   :id-captured-reference [input {:text "Captured Ref. Id"}]
-   :description [input {:text "Description"}]
-   :tags [input {:text "Tags"}]
-   :action-link [input {:text "Action link"}]})
-
 (defn article-editor-form
   "Pure form component for article editting"
   [{:keys [raw-editted-article-id raw-editted-article
            on-raw-editted-article-change on-edit-article-submit]}]
   (letfn [(handle-change [k]
             (fn [v]
-              (on-raw-editted-article-change (assoc raw-editted-article k v))))
-          (make-input [k]
-            (let [[comp props] (get inputs k)]
-              [comp (assoc props
-                           :value (k raw-editted-article)
-                           :on-change (handle-change k))]))]
-    [:form {:on-submit (utils/call-prevent-default #(on-edit-article-submit))}
-     (-> (make-input :id) (assoc-in [1 :value] raw-editted-article-id))
-     (make-input :id-captured-reference)
-     (make-input :description)
-     (make-input :tags)
-     (make-input :action-link)
-     [components-utils/submit-button]]))
+              (on-raw-editted-article-change (assoc raw-editted-article k v))))]
+    (utils/join-vecs
+     [:form {:on-submit (utils/call-prevent-default #(on-edit-article-submit))}]
+     (for [k [:id :id-captured-reference :description :tags :action-link]
+           :let [[comp props] (get articles/inputs k)
+                 value (case k
+                         :id raw-editted-article-id
+                         (get raw-editted-article k))
+                 new-props (assoc props :value value :on-change (handle-change k))]]
+       [comp new-props])
+     [[components-utils/submit-button]])))
 
 (defn article-selector
   "Pure form component for selecting an article."

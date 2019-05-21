@@ -1,6 +1,14 @@
 (ns kti-web.models.articles
   (:require
+   [kti-web.components.utils :as components-utils :refer [input]]
    [clojure.string :as str]))
+
+(def inputs
+  {:id [input {:text "Id" :disabled true}]
+   :id-captured-reference [input {:text "Captured Ref. Id"}]
+   :description [input {:text "Description"}]
+   :tags [input {:text "Tags"}]
+   :action-link [input {:text "Action link"}]})
 
 (defn serialize-tags [x]
   "Transforms tags from string to a list of keywords"
@@ -29,8 +37,7 @@
        (into {:action-link nil :tags []})))
 
 (defn article->raw
-  "Converts an article in it's raw (string) representation"
+  "Converts an article in it's raw (string) representation."
   [article]
-  (->> (dissoc article :id)
-       (map (fn [[k v]] [k ((make-deserializer k) v)]))
+  (->> (map (fn [[k v]] [k ((make-deserializer k) v)]) article)
        (into {})))
