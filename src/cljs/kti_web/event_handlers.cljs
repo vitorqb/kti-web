@@ -14,3 +14,15 @@
       (let [ctx-chan (action init-state extra-args)]
         (go (swap! state r-after extra-args (<! ctx-chan))
             :done)))))
+
+(defn gen-handler-vec
+  "Generates a handler for an event.
+  Same as gen-handler, but takes functions from a vector of
+  [before, action, after]"
+  [state inject [before action after]]
+  (fn [event]
+    (let [init-state @state]
+      (swap! state before inject event)
+      (let [ctx-chan (action init-state inject event)]
+        (go (swap! state after inject event (<! ctx-chan))
+            :done)))))

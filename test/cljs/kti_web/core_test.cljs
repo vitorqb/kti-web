@@ -47,15 +47,15 @@
 (deftest test-home-page
   (let [comp1 (rc/home-page)]
     (testing "Set's host"
-      (is (= (get-in (comp1) [2 2 0]) component-utils/input))
-      ((get-in (comp1) [2 2 1 :on-change]) "foo")
+      (is (= (get-in (comp1) [3 2 0]) component-utils/input))
+      ((get-in (comp1) [3 2 1 :on-change]) "foo")
       (is (= @state/host "foo"))
-      (is (= (get-in (comp1) [2 2 1 :value]) "foo")))
+      (is (= (get-in (comp1) [3 2 1 :value]) "foo")))
     (testing "Set's token"
-      (is (= (get-in (comp1) [2 3 0]) component-utils/input))
-      ((get-in (comp1) [2 3 1 :on-change]) "bar")
+      (is (= (get-in (comp1) [3 3 0]) component-utils/input))
+      ((get-in (comp1) [3 3 1 :on-change]) "bar")
       (is (= @state/token "bar"))
-      (is (= (get-in (comp1) [2 3 1 :value]) "bar")))))
+      (is (= (get-in (comp1) [3 3 1 :value]) "bar")))))
 
 (deftest test-capture-input
   (testing "Calls callback on change"
