@@ -15,6 +15,8 @@
             [kti-web.components.edit-captured-reference-component
              :refer
              [edit-captured-ref-comp]]
+            [kti-web.components.captured-reference-deletor-modal
+             :as captured-reference-deletor-modal]
             [kti-web.components.utils :refer [submit-button input]]
             [kti-web.http
              :refer
@@ -31,6 +33,7 @@
               put-review!
               get-review!
               delete-review!]]
+            [kti-web.event-handlers :refer [gen-handler-vec]]
             [kti-web.state :refer [host init-state token]]
             [kti-web.utils :as utils :refer [call-prevent-default call-with-val]]
             [reagent.core :as r]
@@ -59,10 +62,43 @@
 (path-for :about)
 
 ;; -------------------------
+;; Main Captured Reference Deletor Modal State
+(defonce main-captured-reference-deletor-modal-state
+  (r/atom {:active? false
+           :delete-captured-ref-id nil}))
+(def main-captured-reference-deletor-modal-handlers
+  {:on-abortion
+   (fn main-captured-reference-deletor-modal-on-abortion []
+     (swap! main-captured-reference-deletor-modal-state
+            captured-reference-deletor-modal/reduce-on-abortion
+            nil
+            nil))
+
+   :on-modal-display-for-deletion
+   (fn main-captured-reference-deletor-modal-on-modal-display-for-deletion [event]
+     (swap! main-captured-reference-deletor-modal-state
+            captured-reference-deletor-modal/reduce-on-modal-display-for-deletion
+            nil
+            event))
+
+   :on-confirm-deletion
+   (gen-handler-vec
+    main-captured-reference-deletor-modal-state
+    {:delete-captured-reference! delete-captured-reference!}
+    captured-reference-deletor-modal/handler-fns-on-confirm-deletion)})
+
+(defn main-captured-reference-deletor-modal
+  []
+  (let [props (merge @main-captured-reference-deletor-modal-state
+                     main-captured-reference-deletor-modal-handlers)]
+    [captured-reference-deletor-modal/captured-reference-deletor-modal props]))
+
+;; -----------------------------------------------------------------------------
 ;; Page components
 (defn home-page []
   (fn []
     [:span.main
+     (main-captured-reference-deletor-modal)
      [:h1 "Welcome to kti-web"]
      [:div
       [:h3 "Options"]
@@ -74,7 +110,11 @@
      [:div
       [:h3 "Captured References"]
       [capture-form {:post! post-captured-reference!}]
-      [captured-refs-table {:get! get-captured-references!}]
+      [captured-refs-table
+       (merge
+        {:get! get-captured-references!}
+        (select-keys main-captured-reference-deletor-modal-handlers
+                     [:on-modal-display-for-deletion]))]
       [edit-captured-ref-comp {:hput! put-captured-reference!
                                :hget! get-captured-reference!}]
       [delete-captured-ref-form {:delete! delete-captured-reference!}]]]))

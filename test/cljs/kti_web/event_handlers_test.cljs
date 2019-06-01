@@ -22,3 +22,34 @@
                     (is (= @state 6))
                     (done))))))
 
+(deftest test-gen-handler-vec
+  (let [initial-state 1
+        state (atom initial-state)
+        inject {:inject-value 2}
+        event {:event-value 3}
+        before (fn before [state inject event]
+                 (is (= state initial-state))
+                 (is (= inject inject))
+                 (is (= event event))
+                 ::before-result)
+        action (fn action [state inject event]
+                 (is (= state initial-state))
+                 (is (= inject inject))
+                 (is (= event event)) 
+                 (to-chan [::result]))
+        after  (fn after  [state inject event result]
+                 (is (= inject inject))
+                 (is (= event event))
+                 (is (= result ::result))
+                 ::after-result)
+        handler (rc/gen-handler-vec state inject [before action after])]
+    (async done (go
+                  ;; Call the handler
+                  (let [done-chan (handler event)]
+                    ;; The before was called
+                    (is (= @state ::before-result))
+                    ;; The handler finished
+                    (is (= :done (<! done-chan))))
+                  ;; And state is set by after
+                  (is (= @state ::after-result))
+                  (done)))))
