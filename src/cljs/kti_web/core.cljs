@@ -40,7 +40,7 @@
             [reagent.session :as session]
             [reitit.frontend :as reitit]))
 
-(declare capture-form delete-captured-ref-form)
+(declare capture-form)
 
 ;; -------------------------
 ;; Routes
@@ -116,8 +116,7 @@
         (select-keys main-captured-reference-deletor-modal-handlers
                      [:on-modal-display-for-deletion]))]
       [edit-captured-ref-comp {:hput! put-captured-reference!
-                               :hget! get-captured-reference!}]
-      [delete-captured-ref-form {:delete! delete-captured-reference!}]]]))
+                               :hget! get-captured-reference!}]]]))
 
 (defn capture-input [{:keys [on-change value]}]
   [:div
@@ -154,35 +153,6 @@
                (assoc :on-submit (call-prevent-default handle-submit)
                       :on-change #(swap! state assoc :value %))
                capture-form-inner))))
-
-(defn delete-captured-ref-form-inner
-  [{:keys [ref-id result update-ref-id! delete!]}]
-  (let [handle-submit #(delete! ref-id)]
-    [:div
-     [:form {:on-submit (call-prevent-default handle-submit)}
-      [:h4 "Delete Captured Ref. Form"]
-      [:span "Ref Id: "]
-      [:input {:type "number" :value ref-id
-               :on-change (call-with-val update-ref-id!)}]
-      [:div [:i (str "(current value: " ref-id ")")]]
-      [:div [submit-button {:text "Delete!"}]]
-      (when result [:div (str "Result: " result)])]]))
-
-(defn delete-captured-ref-form [{:keys [delete! c-done]}]
-  (let [state (r/atom {:ref-id nil :result nil})
-        update-ref-id #(swap! state assoc :ref-id %)
-        run-delete!
-        (fn [id]
-          (swap! state assoc :result nil)
-          (go (let [{:keys [error? data]} (<! (delete! id))]
-                (swap! state assoc :result
-                       (if error?
-                         (str "Error: " (utils/to-str data))
-                         "Deleted!"))
-                (and c-done (>! c-done 1)))))]
-    #(delete-captured-ref-form-inner (assoc @state
-                                            :update-ref-id! update-ref-id
-                                            :delete! run-delete!))))
 
 (defn items-page []
   (fn []

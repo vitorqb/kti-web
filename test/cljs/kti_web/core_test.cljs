@@ -115,35 +115,4 @@
              (<! done-chan)
              ;; Results is corrects
              (is (= [:div "Created with id 49 and ref Foobarbaz"] (get-result-div)))
-             (done)))))             
-
-(deftest test-delete-captured-ref-form
-  (let [get-result-div #(get-in % [1 7])
-        get-input-div #(get-in % [1 4])
-        fn-nothing (constantly nil)]
-    (testing "base"
-      (let [ref-id 2 result "foo"
-            comp (rc/delete-captured-ref-form-inner
-                  {:ref-id ref-id :result result
-                   :update-ref-id! fn-nothing :delete! fn-nothing})]
-        (is (= :input (-> comp get-input-div (get 0))))
-        (is (= {:type "number" :value 2}
-               (-> comp get-input-div (get 1) (select-keys [:type :value]))))
-        (is (= [:div [:i "(current value: 2)"]] (get-in comp [1 5])))
-        (is (= [:div "Result: foo"] (get-result-div comp)))))
-    (let [[update-ref-id-args update-ref-id!] (args-saver)
-          [delete-args delete!] (args-saver)
-          comp (rc/delete-captured-ref-form-inner
-                {:ref-id 3 :result nil
-                 :update-ref-id! update-ref-id!
-                 :delete! delete!})]
-      (testing "Dont show result if no result"
-        (is (nil? (get-result-div comp))))
-      (testing "Calls update-ref-id! on input value change"
-        (is (= [] @update-ref-id-args))
-        ((get-in comp [1 4 1 :on-change]) (clj->js {:target {:value "foo"}}))
-        (is (= [["foo"]] @update-ref-id-args)))
-      (testing "Calls delete! on submit"
-        (is (= [] @delete-args))
-        ((get-in comp [1 1 :on-submit]) (utils/prevent-default-event))
-        (is (= [[3]] @delete-args))))))
+             (done)))))
