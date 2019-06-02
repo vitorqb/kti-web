@@ -10,7 +10,9 @@
         inject   {}
         reducer #(rc/reduce-on-modal-display-for-deletion state inject %)]
     (is (= (reducer ::delete-captured-ref-id)
-           {:active? true :delete-captured-ref-id ::delete-captured-ref-id}))))
+           {:status {}
+            :active? true
+            :delete-captured-ref-id ::delete-captured-ref-id}))))
 
 (deftest test-reduce-on-abortion
   (let [state   {:active? true :delete-captured-ref-id 99}
