@@ -64,7 +64,13 @@
       (let [[args fun] (utils/args-saver)
             comp (mount {:on-change fun})]
         ((-> comp get-inner-input-props :on-change) (utils/target-value-event "foo"))
-        (is (= @args [["foo"]]))))))
+        (is (= @args [["foo"]]))))
+    (testing "Set's placeholder"
+      (is (= (-> {:placeholder ::foo} mount get-inner-input-props :placeholder)
+             ::foo)))
+    (testing "Set's className"
+      (is (= (-> {:className ::cls} mount get-inner-input-props :className)
+             ::cls)))))
     
 (deftest test-textarea
   (let [mount rc/textarea

@@ -2,6 +2,7 @@
   (:require [accountant.core :as accountant]
             [clerk.core :as clerk]
             [cljs.core.async :refer [<! >! go]]
+            [kti-web.components.header :as header]
             [kti-web.components.article-viewer :refer [article-viewer]]
             [kti-web.components.article-creator :refer [article-creator]]
             [kti-web.components.article-deletor :refer [article-deletor]]
@@ -100,13 +101,6 @@
     [:span.main
      (main-captured-reference-deletor-modal)
      [:h1 "Welcome to kti-web"]
-     [:div
-      [:h3 "Options"]
-      [input {:text "Host: " :value @host :on-change #(reset! host %)}]
-      [input {:text "Token: "
-              :value @token
-              :on-change #(reset! token %)
-              :type "password"}]]
      [:div
       [:h3 "Captured References"]
       [capture-form {:post! post-captured-reference!}]
@@ -209,17 +203,24 @@
 
 ;; -------------------------
 ;; Page mounting component
+(defn statefull-header []
+  (fn []
+    (let [token-value @token
+          host-value  @host
+          on-token-value-change #(reset! token %)
+          on-host-value-change  #(reset! host %)
+          props {:on-token-value-change on-token-value-change
+                 :on-host-value-change  on-host-value-change
+                 :token-value token-value
+                 :host-value  host-value
+                 :path-for-fn path-for}]
+      [header/header props])))
 
 (defn current-page []
   (fn []
     (let [page (:current-page (session/get :route))]
       [:div
-       [:header
-        [:p
-         [:a {:href (path-for :index)} "Home"] " | "
-         [:a {:href (path-for :article)} "Articles"] " | "
-         [:a {:href (path-for :review)} "Reviews"] " | "
-         [:a {:href (path-for :about)} "About kti-web"]]]
+       [statefull-header]
        [page]])))
 
 ;; -------------------------
