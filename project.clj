@@ -85,10 +85,10 @@
                    :source-paths ["env/dev/clj" "env/dev/cljs" "test/cljs"]
                    :resource-paths ["target"]
                    :plugins [[lein-doo "0.1.11"]
-                             [cider/cider-nrepl "0.22.0-beta1"]
+                             [cider/cider-nrepl "0.22.0-beta4"]
                              [org.clojure/tools.namespace "0.3.0-alpha4"
                               :exclusions [org.clojure/tools.reader]]
-                             [refactor-nrepl "2.4.0"
+                             [refactor-nrepl "2.5.0-SNAPSHOT"
                               :exclusions [org.clojure/clojure]]]
                    :injections [(require 'pjstadig.humane-test-output)
                                 (pjstadig.humane-test-output/activate!)]
