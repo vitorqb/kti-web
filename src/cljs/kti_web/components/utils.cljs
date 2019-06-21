@@ -27,14 +27,16 @@
 
 (defn input
   "A generic input component"
-  [{:keys [text type disabled width value on-change]}]
+  [{:keys [text type disabled width value on-change placeholder className]}]
   [:div
    [:span text]
    [:input {:style {:width (or width 600)}
             :value value
             :on-change (utils/call-with-val on-change)
             :type type
-            :disabled (or disabled false)}]])
+            :disabled (or disabled false)
+            :placeholder placeholder
+            :className className}]])
 
 (defn textarea
   "A textarea component"
