@@ -14,11 +14,13 @@
 
 (defn prepare-request-opts
   "Returns a map with options for running requests with cljs-http"
-  ([] (prepare-request-opts nil))
-  ([json-params]
+  ([] (prepare-request-opts nil nil))
+  ([json-params] (prepare-request-opts json-params nil))
+  ([json-params query-params]
    (merge {:with-credentials? false
            :headers {"authorization" (str "TOKEN " @token)}}
-          (and json-params {:json-params json-params}))))
+          (and json-params {:json-params json-params})
+          (and query-params {:query-params query-params}))))
 
 (defn parse-error-body
   "Given a http response body, returns a map of error messages"
@@ -53,9 +55,9 @@
 (defn run-req!
   "Runs a request using http-fn and json-params, maps the response with
   parse-response and returns a channel with the parsed response."
-  [{:keys [http-fn url json-params deserialize-fn]
+  [{:keys [http-fn url json-params query-params deserialize-fn]
     :or {deserialize-fn identity}}]
-  (as-> (prepare-request-opts json-params) it
+  (as-> (prepare-request-opts json-params query-params) it
     (http-fn url it)
     (async/map parse-response [it])
     (async/map #(deserialize-on-success % deserialize-fn) [it])))
@@ -70,6 +72,13 @@
   (run-req!
    {:http-fn http/get
     :url (api-url "captured-references")}))
+
+(defn get-paginated-captured-references! [{:keys [page page-size]}]
+  {:pre [(number? page) (number? page-size)]}
+  (run-req!
+   {:http-fn http/get
+    :url (api-url "captured-references")
+    :query-params {:page page :page-size page-size}}))
 
 (defn get-captured-reference! [id]
   (run-req!

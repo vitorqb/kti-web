@@ -3,6 +3,14 @@
             [cljs.test :refer-macros [is are deftest testing use-fixtures async]]
             [reagent.core :as r]))
 
+(deftest test-wrap-on-fetch-data
+  (let [instance ::instance
+        instance-state (clj->js {:page 1 :pageSize 10})
+        f #(vec %&)
+        wrapped (sut/wrap-on-fetch-data f)]
+    (is (= (wrapped instance-state instance)
+           [{:page 1 :pageSize 10}]))))
+
 (deftest test-rtable
   (testing "Returns adapted react class with parsed props"
     (with-redefs [r/adapt-react-class (constantly ::adapted-class)

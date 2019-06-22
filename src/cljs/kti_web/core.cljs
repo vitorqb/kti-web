@@ -26,6 +26,7 @@
               get-article!
               get-captured-reference!
               get-captured-references!
+              get-paginated-captured-references!
               post-article!
               post-captured-reference!
               put-article!
@@ -106,7 +107,7 @@
       [capture-form {:post! post-captured-reference!}]
       [captured-refs-table
        (merge
-        {:get! get-captured-references!}
+        {:get-paginated-captured-references! get-paginated-captured-references!}
         (select-keys main-captured-reference-deletor-modal-handlers
                      [:on-modal-display-for-deletion]))]
       [edit-captured-ref-comp {:hput! put-captured-reference!
