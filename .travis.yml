@@ -2,5 +2,5 @@ dist: xenial
 language: clojure
 services: 
   - xvfb
-install: npm install -g karma karma-firefox-launcher karma-cljs-test
+install: yarn install && ./scripts/compile-webpack.bash
 script: lein doo firefox once
