@@ -9,7 +9,8 @@
     "@cljs-oss/module-deps": "^1.1.1",
     "react": "^16.8.6",
     "react-dom": "^16.8.6",
-    "react-select": "^3.0.4"
+    "react-select": "^3.0.4",
+    "react-table": "^6.10.0"
   },
   "devDependencies": {
     "karma": "^4.1.0",
