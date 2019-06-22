@@ -1,1 +1,8 @@
-^{:watch-dirs ["src/cljc" "src/cljs" "env/dev/cljs" "test/cljs"]} {:main kti-web.dev}
+^{:watch-dirs ["src/cljc" "src/cljs" "env/dev/cljs" "test/cljs"]}
+{:main "kti-web.dev"
+ :npm-deps false
+ :foreign-libs [{:file "dist/index_bundle.js"
+                 :provides ["react" "react-dom" "react-select"]
+                 :global-exports {react React
+                                  react-dom ReactDOM
+                                  react-select Select}}]}

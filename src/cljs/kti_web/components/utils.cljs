@@ -2,12 +2,12 @@
   (:require
    [kti-web.utils :as utils]
    [reagent.core :as r]
-   [cljsjs.react-select]))
+   [react-select :as Select]))
 
 (defn select-wrapper
   "Wrapper around react-select providing a select component"
   [{:keys [value on-change options disabled]}]
-  [(r/adapt-react-class js/Select)
+  [(r/adapt-react-class Select)
    {:value      {:value value :label value}
     :options    (map (fn [x] {:value x :label x}) options)
     :on-change  #(-> % js->clj (get "value") on-change)

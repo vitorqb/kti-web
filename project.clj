@@ -6,7 +6,7 @@
 
   :dependencies [[org.clojure/clojure "1.10.0"]
                  [ring-server "0.5.0"]
-                 [reagent "0.8.1"]
+                 [reagent "0.8.1" :exclusions [react react-dom]]
                  [reagent-utils "0.3.2"]
                  [ring "1.7.1"]
                  [ring/ring-defaults "0.3.2"]
@@ -20,8 +20,7 @@
                   :exclusions [org.clojure/tools.reader]]
                  [binaryage/oops "0.7.0"]
                  [cljs-http "0.1.46"]
-                 [pjstadig/humane-test-output "0.9.0"]
-                 [cljsjs/react-select "2.4.3-0"]]
+                 [pjstadig/humane-test-output "0.9.0"]]
 
   :plugins [[lein-environ "1.1.0"]
             [lein-cljsbuild "1.1.7"]
@@ -45,22 +44,18 @@
   {:builds {:min
             {:source-paths ["src/cljs" "src/cljc" "env/prod/cljs"]
              :compiler
-             {:output-to        "target/cljsbuild/public/js/app.js"
-              :output-dir       "target/cljsbuild/public/js"
-              :source-map       "target/cljsbuild/public/js/app.js.map"
+             {:output-to     "target/cljsbuild/public/js/app.js"
+              :output-dir    "target/cljsbuild/public/js"
+              :source-map    "target/cljsbuild/public/js/app.js.map"
               :optimizations :advanced
               :infer-externs true
-              :pretty-print  false}}
-            :app
-            {:source-paths ["src/cljs" "src/cljc" "env/dev/cljs"]
-             :compiler
-             {:main "kti-web.dev"
-              :asset-path "/js/out"
-              :output-to "target/cljsbuild/public/js/app.js"
-              :output-dir "target/cljsbuild/public/js/out"
-              :source-map true
-              :optimizations :none
-              :pretty-print  true}}
+              :pretty-print  false
+              :npm-deps      false
+              :foreign-libs [{:file "dist/index_bundle.js"
+                              :provides ["react" "react-dom" "react-select"]
+                              :global-exports {react React
+                                               react-dom ReactDOM
+                                               react-select Select}}]}}
             :test
             {:source-paths ["src/cljs" "src/cljc" "test/cljs"]
              :compiler {:main kti-web.doo-runner
@@ -68,9 +63,18 @@
                         :output-to "target/test.js"
                         :output-dir "target/cljstest/public/js/out"
                         :optimizations :whitespace
-                        :pretty-print true}}}}
+                        :pretty-print true
+                        :npm-deps false
+                        :foreign-libs [{:file "dist/index_bundle.js"
+                                        :provides ["react" "react-dom" "react-select"]
+                                        :global-exports {react React
+                                                         react-dom ReactDOM
+                                                         react-select Select}}]
+                        :infer-externs true}}}}
 
-  :doo {:build "test" :alias {:default [:firefox]}}
+  :doo {:build "test"
+        :alias {:default [:firefox]}
+        :paths {:karma "./node_modules/karma/bin/karma"}}
   :profiles {:dev {:repl-options {:init-ns kti-web.repl}
                    :dependencies [[cider/piggieback "0.4.0"]
                                   [binaryage/devtools "0.9.10"]

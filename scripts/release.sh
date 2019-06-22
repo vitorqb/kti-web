@@ -50,6 +50,10 @@ function ensureGithubToken() {
         exit 1
     fi
 }
+function compileWebpack() {
+    echo "-> Compiling js code with webpack..."
+    ./scripts/compile-webpack.bash
+}
 function compile() {
     echo "-> Compiling..."
     lein do clean, uberjar
@@ -95,6 +99,7 @@ stopIfHelpFlagPassed &&
     ensureTagIsValid &&
     ensureProjectCljHasTag &&
     ensureGithubToken &&
+    compileWebpack &&
     compile &&
     maybeCreateTag &&
     pushTag &&

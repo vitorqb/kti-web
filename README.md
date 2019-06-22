@@ -36,6 +36,12 @@ https://github.com/vitorqb/kti/releases/tag/1.4.3
 
 ## Development mode
 
+First, you will need to install the npm dependencies. We use yarn + webpack. This should do it:
+
+```
+yarn install && scripts/compile-webpack.bash
+```
+
 The project uses figwheel-main (https://github.com/bhauman/figwheel-main) for development builds.
 
 To start the Figwheel compiler, navigate to the project folder and run the following command in the terminal:
