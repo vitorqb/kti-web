@@ -2,7 +2,8 @@
 {:main "kti-web.dev"
  :npm-deps false
  :foreign-libs [{:file "dist/index_bundle.js"
-                 :provides ["react" "react-dom" "react-select"]
+                 :provides ["react" "react-dom" "react-select" "react-table"]
                  :global-exports {react React
                                   react-dom ReactDOM
-                                  react-select Select}}]}
+                                  react-select Select
+                                  react-table ReactTable}}]}

@@ -4,7 +4,8 @@
             [kti-web.components.captured-reference-table :as rc]
             [kti-web.http :as http]
             [kti-web.test-factories :as factories]
-            [kti-web.test-utils :as utils]))
+            [kti-web.test-utils :as utils]
+            [kti-web.components.rtable :refer [rtable]]))
 
 (deftest test-delete-captured-ref-action-button
   (let [[on-modal-display-for-deletion-args on-modal-display-for-deletion-fun]
@@ -17,19 +18,6 @@
     (is (= (get-in comp [1 :className]) "delete-button"))
     ((get-in comp [1 :on-click]) ::foo)
     (is (= @on-modal-display-for-deletion-args) [[::row-captured-ref-id]])))
-
-(deftest test-make-thead
-  (let [make-thead #'kti-web.components.captured-reference-table/make-thead]
-    (is (= (make-thead [{:head-text "foo"} {:head-text "bar"}])
-           [:thead [:tr [:th {:key "foo"} "foo"] [:th {:key "bar"} "bar"]]]))))
-
-(deftest test-make-tbody
-  (let [make-tbody #'kti-web.components.captured-reference-table/make-tbody]
-    (is (= (make-tbody [{:fn-get ::foo} {:fn-get ::bar}]
-                       [{::foo "a" ::bar "b"} {::foo "c" ::bar "d"}])
-           [:tbody
-            [:tr [:td "a"] [:td "b"]]
-            [:tr [:td "c"] [:td "d"]]]))))
 
 (deftest test-make-action-buttons
   (let [props {:on-modal-display-for-deletion ::on-modal-display-for-deletion}
@@ -46,29 +34,26 @@
                                            (is (= props ::props))
                                            (is (= row ::row))
                                            ::action-buttons)]
-      (let [fn-get (-> ::props rc/make-columns (get-in [7 :fn-get]))]
-        (is (= (fn-get ::row) ::action-buttons))))))
+      (let [accessor (-> ::props rc/make-columns (get-in [6 :accessor]))
+            cell-fn  (-> ::props rc/make-columns (get-in [6 :cell-fn]))]
+        (is (= (accessor ::row) ::row))
+        (is (= (cell-fn  ::row) ::action-buttons))))))
 
 (deftest test-captured-refs-table-inner
   (let [mount rc/captured-refs-table-inner
-        make-thead #'kti-web.components.captured-reference-table/make-thead
-        make-tbody #'kti-web.components.captured-reference-table/make-tbody
         get-refresh-button #(get % 2)
-        get-thead #(get-in % [3 1])
-        get-tbody #(get-in % [3 2])]
+        get-table #(get % 3)]
     (testing "Calls fn-refresh!"
       (let [[args fun] (utils/args-saver)
             comp (mount {:fn-refresh! fun})]
         ((-> comp get-refresh-button (get-in [1 :on-click])) ::foo)
         (is (= @args [[]]))))
-    (testing "Mounts thead..."
-      (let [comp (mount {})]
-        (is (= (get-thead comp) (make-thead (rc/make-columns {}))))))
-    (testing "Mounts tbody..."
-      (let [refs [factories/captured-ref]
-            props {:refs refs}
-            comp (mount props)]
-        (is (= (get-tbody comp) (make-tbody (rc/make-columns props) refs)))))))
+    (testing "Mounts table..."
+      (let [c (mount {})
+            table (get-table c)]
+        (is (= (get table 0) rtable))
+        (is (not (nil? (get-in table [1 :columns]))))
+        (is (not (nil? (get-in table [1 :data]))))))))
 
 (deftest test-refresh
   (testing "r-before"

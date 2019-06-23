@@ -38,8 +38,10 @@
   :source-paths ["src/clj" "src/cljc" "src/cljs"]
   :resource-paths ["resources" "target/cljsbuild" "target/public"]
 
-  :minify-assets [[:css {:source "resources/public/css/site.css"
-                         :target "resources/public/css/site.min.css"}]]
+  :minify-assets [[:css [{:source "resources/public/css/site.css"
+                          :target "resources/public/css/site.min.css"}
+                         {:source "resources/public/css/react-table.css"
+                          :target "resources/public/css/react-table.min.css"}]]]
   :cljsbuild
   {:builds {:min
             {:source-paths ["src/cljs" "src/cljc" "env/prod/cljs"]
@@ -52,10 +54,11 @@
               :pretty-print  false
               :npm-deps      false
               :foreign-libs [{:file "dist/index_bundle.js"
-                              :provides ["react" "react-dom" "react-select"]
+                              :provides ["react" "react-dom" "react-select" "react-table"]
                               :global-exports {react React
                                                react-dom ReactDOM
-                                               react-select Select}}]}}
+                                               react-select Select
+                                               react-table ReactTable}}]}}
             :test
             {:source-paths ["src/cljs" "src/cljc" "test/cljs"]
              :compiler {:main kti-web.doo-runner
@@ -66,10 +69,11 @@
                         :pretty-print true
                         :npm-deps false
                         :foreign-libs [{:file "dist/index_bundle.js"
-                                        :provides ["react" "react-dom" "react-select"]
+                                        :provides ["react" "react-dom" "react-select" "react-table"]
                                         :global-exports {react React
                                                          react-dom ReactDOM
-                                                         react-select Select}}]
+                                                         react-select Select
+                                                         react-table ReactTable}}]
                         :infer-externs true}}}}
 
   :doo {:build "test"

@@ -3,6 +3,7 @@
             [kti-web.utils :as utils :refer [js-alert]]
             [kti-web.components.utils :as components-utils]
             [kti-web.event-handlers :refer [gen-handler]]
+            [kti-web.components.rtable :refer [rtable]]
             [reagent.core :as r]))
 
 (defn delete-captured-ref-action-button
@@ -23,45 +24,26 @@
 (defn make-columns
   "Returns array of maps describing the table columns."
   [props]
-  [{:head-text "Id"          :fn-get :id}
-   {:head-text "Reference"   :fn-get :reference}
-   {:head-text "Created At"  :fn-get :created-at}
-   {:head-text "Classified?" :fn-get (comp str :classified)}
-   {:head-text "Article Id"  :fn-get :article-id}
-   {:head-text "Review Id"   :fn-get :review-id}
-   {:head-text "Rev. status" :fn-get :review-status}
-   {:head-text "Actions"     :fn-get #(make-action-buttons props %)}])
-
-(defn- make-thead
-  "Prepares a thead for the table, given an array of columns."
-  [cols]
-  (->> cols
-       (map (fn [{:keys [head-text]}] [:th {:key head-text} head-text]))
-       (apply vector :tr)
-       (vector :thead)))
-
-(defn- make-tbody
-  "prepares a tbody for the table, given an array of columns and rows."
-  [cols rows]
-  (->> rows
-       (map (fn [row]
-              (->> cols
-                   (map (fn [{:keys [fn-get]}] [:td (fn-get row)]))
-                   (apply vector :tr))))
-       (apply vector :tbody)))
+  [{:header "Id"          :accessor :id            :width 50}
+   {:header "Reference"   :accessor :reference     :width 400}
+   {:header "Created At"  :accessor :created-at    :width 190}
+   {:header "Article Id"  :accessor :article-id    :width 100}
+   {:header "Review Id"   :accessor :review-id     :width 100}
+   {:header "Rev. status" :accessor :review-status :width 150}
+   {:header "Actions"     :accessor identity
+    :cell-fn #(make-action-buttons props %)}])
 
 (defn captured-refs-table-inner
   "Pure component for a table of captured references."
   [{:keys [loading? refs fn-refresh!] :as props}]
-  (let [columns (make-columns props)]
+  (let [columns (make-columns props)
+        data (->> refs (sort-by :created-at) reverse)]
     [:div
      [:h4 "Captured References Table"]
      [:button {:on-click #(fn-refresh!)} "Update"]
      (if loading?
        [:div "LOADING..."]
-       [:table
-        (make-thead columns)
-        (->> refs (sort-by :created-at) reverse (make-tbody columns))])
+       [rtable {:columns columns :data data}])
      [components-utils/errors-displayer props]]))
 
 (defonce state (r/atom {:loading? true :refs nil :status {}}))             

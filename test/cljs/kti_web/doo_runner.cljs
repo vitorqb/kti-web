@@ -19,7 +19,8 @@
             [kti-web.event-handlers-test]
             [kti-web.components.article-viewer-test]
             [kti-web.components.captured-reference-deletor-modal-test]
-            [kti-web.components.header-test]))
+            [kti-web.components.header-test]
+            [kti-web.components.rtable-test]))
 
 (doo-tests 'kti-web.core-test
            'kti-web.http-test
@@ -40,4 +41,5 @@
            'kti-web.event-handlers-test
            'kti-web.components.article-viewer-test
            'kti-web.components.captured-reference-deletor-modal-test
-           'kti-web.components.header-test)
+           'kti-web.components.header-test
+           'kti-web.components.rtable-test)
