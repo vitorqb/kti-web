@@ -45,6 +45,7 @@ a:hover {
 }
 
 .modal-wrapper-div {
+    z-index: 99999;
     width: 100%;
     height: 100%;
     position: fixed;

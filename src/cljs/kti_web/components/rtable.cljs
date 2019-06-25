@@ -10,13 +10,21 @@
    :showPaginationBottom true
    :defaultPageSize 50})
 
+(defn wrap-on-fetch-data
+  "Wraps a function that will be passed to OnFetchData prop."
+  [f]
+  (fn on-fetch-data-wrapper [instance-state-js _]
+    (let [instance-state (js->clj instance-state-js :keywordize-keys true)
+          {page :page page-size :pageSize} instance-state]
+      (f {:page page :pageSize page-size}))))
+
 (defn wrap-cell-fn
   "Wraps cell-fn to be used in the ReactTable as the Cell prop."
   [cell-fn]
   {:pre [(fn? cell-fn)] :post (fn? %)}
   (fn wrapped-cell-fn [row]
     {:pre [(.hasOwnProperty row "value")]}
-    (let [value (.-value row)
+    (let [value (-> row .-value (js->clj :keywordize-keys true))
           el-hiccup (cell-fn value)
           el-react (r/as-element el-hiccup)]
       el-react)))
@@ -43,6 +51,7 @@
   [[k v]]
   (case k
     :columns [k (map parse-column v)]
+    :on-fetch-data [:onFetchData (wrap-on-fetch-data v)]
     [k v]))
 
 (defn parse-props

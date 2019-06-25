@@ -16,7 +16,13 @@
     (is (= (rc/prepare-request-opts {:a :b})
            {:with-credentials? false
             :headers {"authorization" (str "TOKEN " @state/token)}
-            :json-params {:a :b}}))))
+            :json-params {:a :b}})))
+  (testing "With query-params"
+    (is (= (rc/prepare-request-opts {::a ::b} {::c ::d})
+           {:with-credentials? false
+            :headers {"authorization" (str "TOKEN " @state/token)}
+            :json-params {::a ::b}
+            :query-params {::c ::d}}))))
 
 (deftest test-parse-error-body
   (testing "Only errors"
@@ -71,15 +77,17 @@
 (deftest test-run-req!-base
   (let [http-fn-chan (chan 1)
         [http-fn-args save-http-fn-args] (utils/args-saver)
-        {:keys [http-fn url json-params] :as args}
+        {:keys [http-fn url json-params query-params] :as args}
         {:http-fn (fn [x y] (save-http-fn-args x y) http-fn-chan)
          :url "www.google.com"
-         :json-params {:a 1}}
+         :json-params {:a 1}
+         :query-params {:b 2}}
         chan (rc/run-req! args)]
     (is (= @http-fn-args [[url (assoc {:with-credentials? false
                                        :headers
                                        {"authorization" (str "TOKEN " @state/token)}}
-                                      :json-params json-params)]]))
+                                      :json-params json-params
+                                      :query-params query-params)]]))
     (async done
            (go (>! http-fn-chan {:success true :body 1})
                (is (= {:data 1} (<! chan)))

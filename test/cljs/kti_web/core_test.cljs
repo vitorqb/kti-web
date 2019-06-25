@@ -39,11 +39,6 @@
       (do (println "Not found: " res)
           false))))
 
-(deftest test-home
-  (with-mounted-component (rc/home-page)
-    (fn [c div]
-      (is (found-in #"Welcome to" div)))))
-
 (deftest test-capture-input
   (testing "Calls callback on change"
     (let [[callback-args callback] (args-saver)
