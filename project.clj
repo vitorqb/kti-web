@@ -1,4 +1,4 @@
-(defproject kti-web "0.6.0"
+(defproject kti-web "0.7.0"
   :description "FIXME: A frontend for KTI"
   :url "https://github.com/vitorqb/kti-web/"
   :license {:name "Eclipse Public License"
@@ -38,10 +38,10 @@
   :source-paths ["src/clj" "src/cljc" "src/cljs"]
   :resource-paths ["resources" "target/cljsbuild" "target/public"]
 
-  :minify-assets [[:css [{:source "resources/public/css/site.css"
-                          :target "resources/public/css/site.min.css"}
-                         {:source "resources/public/css/react-table.css"
-                          :target "resources/public/css/react-table.min.css"}]]]
+  :minify-assets [[:css {:source "resources/public/css/site.css"
+                         :target "resources/public/css/site.min.css"}]
+                  [:css {:source "resources/public/css/react-table.css"
+                         :target "resources/public/css/react-table.min.css"}]]
   :cljsbuild
   {:builds {:min
             {:source-paths ["src/cljs" "src/cljc" "env/prod/cljs"]
