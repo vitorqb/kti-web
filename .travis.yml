@@ -4,3 +4,7 @@ services:
   - xvfb
 install: yarn install && ./scripts/compile-webpack.bash
 script: lein doo firefox once
+sudo: true
+cache:
+  directories:
+  - $HOME/.m2
