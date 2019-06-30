@@ -146,7 +146,7 @@
                (is (= (<! out-chan) :done))
                ;; And the article is now set (as its raw version)
                (is (= (get-raw-editted-article)
-                      (articles/article->raw factories/article)))
+                      (-> factories/article articles/article->raw (dissoc :id))))
                ;; And the status is Success!
                (is (= (get-in (comp-1) [1 :status :id-selection])
                       {:success-msg "Success!"}))
