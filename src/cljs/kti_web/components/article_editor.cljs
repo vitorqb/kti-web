@@ -78,7 +78,7 @@
   (fn [state]
     (-> state
         (assoc :loading? false
-               :raw-editted-article (articles/article->raw data)
+               :raw-editted-article (-> data articles/article->raw (dissoc :id))
                :raw-editted-article-id (:id data))
         (assoc-in [:status :id-selection] {:success-msg "Success!"}))))
 
