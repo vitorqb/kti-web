@@ -15,4 +15,5 @@ pom.xml.asc
 /.sass-cache
 node_modules
 /resources/public/css/site.min.css
+/resources/public/css/react-table.min.css
 /dist
