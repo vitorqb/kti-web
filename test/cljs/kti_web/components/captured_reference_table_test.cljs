@@ -71,7 +71,7 @@
             table-state {:page 1 :pageSize 2}
             comp (mount {:fn-refresh! fun :table-state table-state})]
         ((-> comp get-refresh-button (get-in [1 :on-click])) ::foo)
-        (is (= @args [[]]))))
+        (is (= @args [[{:page 1 :pageSize 2}]]))))
     (testing "Mounts table..."
       (with-redefs [rc/props->rtable-props (constantly ::rtable-props)]
         (let [c (mount {})

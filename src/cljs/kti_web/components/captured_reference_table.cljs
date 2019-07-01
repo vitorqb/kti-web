@@ -57,10 +57,10 @@
 
 (defn captured-refs-table-inner
   "Pure component for a table of captured references."
-  [{:keys [fn-refresh!] :as props}]
+  [{{:keys [page pageSize]} :table-state :keys [fn-refresh!] :as props}]
   [:div
    [:h4 "Captured References Table"]
-   [:button {:on-click #(fn-refresh!)} "Update"]
+   [:button {:on-click #(fn-refresh! {:page page :pageSize pageSize})} "Update"]
    [rtable (props->rtable-props props)]
    [components-utils/errors-displayer props]])
 
