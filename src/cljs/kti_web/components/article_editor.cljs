@@ -6,15 +6,25 @@
    [kti-web.components.utils :as components-utils :refer [input]]
    [cljs.core.async :refer [chan <! >! put! go] :as async]))
 
+(defprotocol ArticleEditorEvents
+  "Events declaration for article-editor."
+  (on-article-id-change [this selected-article-id]
+    "Handles the change of the currently selected article id for edition.")
+  (on-article-id-submit [this]
+    "Handles the submition of the currently selected article id for edition")
+  (on-raw-editted-article-change [this raw-editted-article]
+    "Handles when the raw article editted by the user changes.")
+  (on-edit-article-submit [this]
+    "Handles the submition of the currently raw editted article."))
+
 (defn article-editor-form
   "Pure form component for article editting"
-  [{:keys [raw-editted-article-id raw-editted-article
-           on-raw-editted-article-change on-edit-article-submit]}]
+  [{:keys [raw-editted-article-id raw-editted-article handler]}]
   (letfn [(handle-change [k]
             (fn [v]
-              (on-raw-editted-article-change (assoc raw-editted-article k v))))]
+              (on-raw-editted-article-change handler (assoc raw-editted-article k v))))]
     (utils/join-vecs
-     [:form {:on-submit (utils/call-prevent-default #(on-edit-article-submit))}]
+     [:form {:on-submit (utils/call-prevent-default #(on-edit-article-submit handler))}]
      (for [k [:id :id-captured-reference :description :tags :action-link]
            :let [[comp props] (get articles/inputs k)
                  value (case k
@@ -26,12 +36,11 @@
 
 (defn article-selector
   "Pure form component for selecting an article."
-  [{:keys [selected-article-id on-article-id-change on-article-id-submit
-           get-article!]}]
-  [:form {:on-submit (utils/call-prevent-default #(on-article-id-submit))}
+  [{:keys [selected-article-id handler get-article!]}]
+  [:form {:on-submit (utils/call-prevent-default #(on-article-id-submit handler))}
    [:span "Article Id: "]
    [:input {:value selected-article-id
-            :on-change (utils/call-with-val on-article-id-change)}]
+            :on-change (utils/call-with-val #(on-article-id-change handler %))}]
    [components-utils/submit-button]])
 
 (defn article-editor--inner
@@ -105,44 +114,47 @@
         (assoc-in [:status :edit-article] {:errors errors})
         (assoc :loading? false))))
 
+(defn new-event-handler [state {:keys [get-article! put-article!]}]
+  (reify ArticleEditorEvents
+    (on-article-id-change [_ selected-article-id]
+      (swap! state assoc :selected-article-id selected-article-id))
+
+    (on-article-id-submit [_]
+      (let [{:keys [selected-article-id]} @state]
+        (swap! state reset-state-for-id-submit)
+        (let [resp-chan (get-article! selected-article-id)]
+          (go
+            (let [{:keys [error? data]} (<! resp-chan)
+                  reducer (if error?
+                            (set-state-on-id-submit-error data)
+                            (set-state-on-id-submit-success data))]
+              (swap! state reducer))
+            :done))))
+
+    (on-raw-editted-article-change [_ raw-editted-article]
+      (swap! state assoc :raw-editted-article raw-editted-article))
+
+    (on-edit-article-submit [_]
+      (let [{:keys [raw-editted-article-id raw-editted-article]} @state]
+        (swap! state reset-state-for-article-submit)
+        (let [serialized-article-spec
+              (articles/serialize-article-spec raw-editted-article)
+              resp-chan
+              (put-article! raw-editted-article-id serialized-article-spec)]
+          (go
+            (let [{:keys [error? data]} (<! resp-chan)
+                  reducer (if error?
+                            (set-state-on-edit-submit-error data)
+                            set-state-on-edit-submit-success)]
+              (swap! state reducer))
+            :done))))))
+
 (defn article-editor [{:keys [get-article! put-article!] :as props}]
-  (let [state
-        (atom {:loading? false
-               :raw-editted-article-id nil
-               :raw-editted-article nil
-               :selected-article-id nil
-               :status {:id-selection {:errors nil :success-msg nil}
-                        :edit-article {:errors nil :success-msg nil}}})
-        handle-article-id-submit
-        (fn []
-          (swap! state reset-state-for-id-submit)
-          (let [resp-chan (get-article! (:selected-article-id @state))]
-            (go
-             (let [{:keys [error? data]} (<! resp-chan)]
-               (swap! state (if error?
-                              (set-state-on-id-submit-error data)
-                              (set-state-on-id-submit-success data))))
-             :done)))
-        handle-edit-article-submit
-        (fn []
-          (swap! state reset-state-for-article-submit)
-          (let [resp-chan
-                (let [{:keys [raw-editted-article-id raw-editted-article]} @state]
-                  (put-article!
-                   raw-editted-article-id
-                   (articles/serialize-article-spec raw-editted-article)))]
-            (go
-              (let [{:keys [error? data]} (<! resp-chan)]
-                (swap! state (if error?
-                               (set-state-on-edit-submit-error data)
-                               set-state-on-edit-submit-success)))
-              :done)))]
-    (fn []
-      [article-editor--inner
-       (merge
-        props
-        @state
-        {:on-article-id-change #(swap! state assoc :selected-article-id %)
-         :on-article-id-submit handle-article-id-submit
-         :on-raw-editted-article-change #(swap! state assoc :raw-editted-article %)
-         :on-edit-article-submit handle-edit-article-submit})])))
+  (let [state (atom {:loading? false
+                     :raw-editted-article-id nil
+                     :raw-editted-article nil
+                     :selected-article-id nil
+                     :status {:id-selection {:errors nil :success-msg nil}
+                              :edit-article {:errors nil :success-msg nil}}})
+        handler (new-event-handler state props)]
+    (fn [] [article-editor--inner (merge props @state {:handler handler})])))
