@@ -93,7 +93,7 @@
                    :source-paths ["env/dev/clj" "env/dev/cljs" "test/cljs"]
                    :resource-paths ["target"]
                    :plugins [[lein-doo "0.1.11"]
-                             [cider/cider-nrepl "0.22.0-beta4"]
+                             [cider/cider-nrepl "0.22.0-beta6"]
                              [org.clojure/tools.namespace "0.3.0-alpha4"
                               :exclusions [org.clojure/tools.reader]]
                              [refactor-nrepl "2.5.0-SNAPSHOT"
