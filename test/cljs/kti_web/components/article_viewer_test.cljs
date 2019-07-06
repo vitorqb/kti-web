@@ -33,21 +33,28 @@
              (-> {:status ::a} mount (get 3)))))))
 
 (deftest test-article-id-selection
+
   (testing "r-before"
-    (let [f (:r-before rc/view-article-id-selection)]
-      (is (= (f {::a ::b}) {::a ::b :loading? true :status {} :view-article nil}))))
+    (let [[f _ _] rc/view-article-id-selection]
+      (is (= (f {::a ::b} {} {})
+             {::a ::b :loading? true :status {} :view-article nil}))))
+
   (testing "action"
-    (let [f (:action rc/view-article-id-selection)
+    (let [[_ f _] rc/view-article-id-selection
           [args saver] (utils/args-saver)]
-      (is (= (f {:selected-view-article-id 987} {:get-article! #(do (saver %) ::a)})
+      (is (= (f {:selected-view-article-id 987} {:get-article! #(do (saver %) ::a)} {})
              ::a))
       (is (= @args [[987]]))))
+
   (testing "after"
-    (let [f (:r-after rc/view-article-id-selection)]
-      (is (= (f {::a ::b} nil {:error? true :data ::a})
-             {::a ::b :loading? false :status {:errors ::a}}))
+    (let [[_ _ f] rc/view-article-id-selection]
+      (is (= (f {::a ::b} nil {} {:error? true :data ::a})
+             {::a ::b
+              :loading? false
+              :status {:errors ::a}
+              :view-article nil}))
       (with-redefs [articles/article->raw #(do (assert (= % ::a)) ::b)]
-        (is (= (f {::a ::b} nil {:data ::a})
+        (is (= (f {::a ::b} nil {} {:data ::a})
                {::a ::b
                 :loading? false
                 :status {:success-msg "Success!"}
