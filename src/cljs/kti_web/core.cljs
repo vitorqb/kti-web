@@ -11,13 +11,9 @@
             [kti-web.components.review-deletor :refer [review-deletor]]
             [kti-web.components.review-editor :refer [review-editor]]
             [kti-web.components.captured-reference-table
-             :refer
-             [captured-refs-table]]
+             :refer [captured-refs-table]]
             [kti-web.components.edit-captured-reference-component
-             :refer
-             [edit-captured-ref-comp]]
-            [kti-web.components.captured-reference-deletor-modal
-             :as captured-reference-deletor-modal]
+             :refer [edit-captured-ref-comp]]
             [kti-web.components.utils :refer [submit-button input]]
             [kti-web.http
              :refer
@@ -35,6 +31,8 @@
               put-review!
               get-review!
               delete-review!]]
+            [kti-web.instances.main-captured-reference-deletor-modal
+             :as main-captured-reference-deletor-modal]
             [kti-web.event-handlers :refer [gen-handler-vec]]
             [kti-web.state :refer [host init-state token]]
             [kti-web.utils :as utils :refer [call-prevent-default call-with-val]]
@@ -49,9 +47,6 @@
 (def router
   (reitit/router
    [["/" :index]
-    ["/items"
-     ["" :items]
-     ["/:item-id" :item]]
     ["/about" :about]
     ["/article" :article]
     ["/review" :review]]))
@@ -63,44 +58,12 @@
 
 (path-for :about)
 
-;; -------------------------
-;; Main Captured Reference Deletor Modal State
-(defonce main-captured-reference-deletor-modal-state
-  (r/atom {:active? false
-           :delete-captured-ref-id nil}))
-(def main-captured-reference-deletor-modal-handlers
-  {:on-abortion
-   (fn main-captured-reference-deletor-modal-on-abortion []
-     (swap! main-captured-reference-deletor-modal-state
-            captured-reference-deletor-modal/reduce-on-abortion
-            nil
-            nil))
-
-   :on-modal-display-for-deletion
-   (fn main-captured-reference-deletor-modal-on-modal-display-for-deletion [event]
-     (swap! main-captured-reference-deletor-modal-state
-            captured-reference-deletor-modal/reduce-on-modal-display-for-deletion
-            nil
-            event))
-
-   :on-confirm-deletion
-   (gen-handler-vec
-    main-captured-reference-deletor-modal-state
-    {:delete-captured-reference! delete-captured-reference!}
-    captured-reference-deletor-modal/handler-fns-on-confirm-deletion)})
-
-(defn main-captured-reference-deletor-modal
-  []
-  (let [props (merge @main-captured-reference-deletor-modal-state
-                     main-captured-reference-deletor-modal-handlers)]
-    [captured-reference-deletor-modal/captured-reference-deletor-modal props]))
-
 ;; -----------------------------------------------------------------------------
 ;; Page components
 (defn home-page []
   (fn []
     [:span.main
-     (main-captured-reference-deletor-modal)
+     (main-captured-reference-deletor-modal/instance)
      [:h1 "Welcome to kti-web"]
      [:div
       [:h3 "Captured References"]
@@ -108,7 +71,7 @@
       [captured-refs-table
        (merge
         {:get-paginated-captured-references! get-paginated-captured-references!}
-        (select-keys main-captured-reference-deletor-modal-handlers
+        (select-keys main-captured-reference-deletor-modal/handlers
                      [:on-modal-display-for-deletion]))]
       [edit-captured-ref-comp {:hput! put-captured-reference!
                                :hget! get-captured-reference!}]]]))
@@ -149,26 +112,8 @@
                       :on-change #(swap! state assoc :value %))
                capture-form-inner))))
 
-(defn items-page []
-  (fn []
-    [:span.main
-     [:h1 "The items of kti-web"]
-     [:ul (map (fn [item-id]
-                 [:li {:name (str "item-" item-id) :key (str "item-" item-id)}
-                  [:a {:href (path-for :item {:item-id item-id})} "Item: " item-id]])
-               (range 1 60))]]))
-
-(defn item-page []
-  (fn []
-    (let [routing-data (session/get :route)
-          item (get-in routing-data [:route-params :item-id])]
-      [:span.main
-       [:h1 (str "Item " item " of kti-web")]
-       [:p [:a {:href (path-for :items)} "Back to the list of items"]]])))
-
 (defn about-page []
-  (fn [] [:span.main
-          [:h1 "About kti-web"]]))
+  (fn [] [:span.main [:h1 "About kti-web"]]))
 
 (defn article-page
   "A page for articles =D"
@@ -197,8 +142,6 @@
   (case route
     :index #'home-page
     :about #'about-page
-    :items #'items-page
-    :item #'item-page
     :article #'article-page
     :review #'review-page))
 
