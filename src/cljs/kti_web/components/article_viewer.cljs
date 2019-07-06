@@ -5,12 +5,16 @@
    [kti-web.models.articles :as articles]
    [kti-web.utils :as utils :refer [join-vecs call-prevent-default]]
    [kti-web.components.utils :as components-utils :refer [input submit-button]]
-   [kti-web.event-handlers :refer [gen-handler-vec]]))
+   [kti-web.event-handlers :refer [handle!-vec]]))
 
-(def state (r/atom {:loading? false
-                    :status {}
-                    :view-article nil
-                    :selected-view-article-id nil}))
+(defprotocol ArticleViewerEvents
+  "Events for article viewer."
+
+  (on-selected-view-article-id-change [this new-value]
+    "Handles change of the value for the selected article id")
+
+  (on-selected-view-article-id-submit [this]
+    "Handles submission of the selected article id for viewing"))
 
 (defn- http-resp->status [{:keys [error? data]}]
   (if error?
@@ -34,16 +38,29 @@
             :status (http-resp->status http-resp)
             :view-article (http-resp->view-article http-resp)))])
 
+(defn new-handler [state props]
+  (reify ArticleViewerEvents
+
+    (on-selected-view-article-id-change [_ new-value]
+      (swap! state assoc :selected-view-article-id new-value))
+
+    (on-selected-view-article-id-submit [_]
+      (handle!-vec nil state props view-article-id-selection))))
+
+(def state (r/atom {:loading? false
+                    :status {}
+                    :view-article nil
+                    :selected-view-article-id nil}))
+
 (defn article-viewer-inner
   "Pure component to edit an article"
-  [{:keys [view-article selected-view-article-id on-selected-view-article-id-change
-           on-selected-view-article-id-submit]
-    :as props}]
+  [{:keys [view-article selected-view-article-id handler] :as props}]
   [:div
-   [:form {:on-submit (call-prevent-default on-selected-view-article-id-submit)}
+   [:form {:on-submit (call-prevent-default
+                       #(on-selected-view-article-id-submit handler))}
     [input {:text "ID: "
             :value selected-view-article-id
-            :on-change on-selected-view-article-id-change
+            :on-change #(on-selected-view-article-id-change handler %)
             :width "100px"
             :type "number"}]
     [submit-button]]
@@ -58,13 +75,8 @@
 
 (defn article-viewer
   "An component to edit an article."
-  [{:keys [get-article!]}]
+  [props]
   (fn []
     [article-viewer-inner
-     (assoc
-      @state
-      :on-selected-view-article-id-change
-      #(swap! state assoc :selected-view-article-id %)
-      :on-selected-view-article-id-submit
-      (gen-handler-vec state {:get-article! get-article!} view-article-id-selection))]))
+     (merge @state props {:handler (new-handler state props)})]))
 
