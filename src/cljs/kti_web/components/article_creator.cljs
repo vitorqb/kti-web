@@ -8,20 +8,43 @@
    [kti-web.models.articles :as articles]
    [kti-web.components.utils :refer [input submit-button] :as components-utils]))
 
-(defprotocol ArticleCreatorEvents
-  "Events for article-creator."
-  (on-article-spec-update [this new-spec]
-    "Handles the change on the current specification for the article.")
-  (on-article-creation-submit [this]
-    "Handles the submission of the current specification for the article."))
-
+;; Helpers
 (defn make-success-msg [{:keys [id]}] (str "Created article with id " id))
 
+(defn- state->serialized-article-spec [{:keys [article-spec]}]
+  (articles/serialize-article-spec article-spec))
+
+(defn- post-response->status [{:keys [error? data]}]
+  (if error?
+    {:errors data}
+    {:success-msg (make-success-msg data)}))
+
+;; Reducers
+(defn reduce-on-article-spec-update [state new-spec]
+  (assoc state :article-spec new-spec))
+
+(defn reduce-before-article-creation-submit [state]
+  (assoc state :status {}))
+
+(defn reduce-after-article-creation-submit [state http-resp]
+  (assoc state :status (post-response->status http-resp)))
+
+;; Event Handlers
+(defn handle-on-article-spec-update [state _]
+  (fn [new-spec]
+    (swap! state reduce-on-article-spec-update new-spec)))
+
+(defn handle-on-article-creation-submit [state {:keys [hpost!]}]
+  (fn []
+    (let [resp-chan (-> @state state->serialized-article-spec hpost!)]
+      (swap! state reduce-before-article-creation-submit)
+      (go (swap! state reduce-after-article-creation-submit (<! resp-chan))))))
+
+;; Components
 (defn article-creator-form
-  [{:keys [article-spec handler]}]
-  (letfn [(change-handler [k]
-            #(on-article-spec-update handler (assoc article-spec k %)))]
-    [:form {:on-submit (call-prevent-default #(on-article-creation-submit handler))}
+  [{:keys [article-spec on-article-creation-submit on-article-spec-update]}]
+  (letfn [(change-handler [k] #(on-article-spec-update (assoc article-spec k %)))]
+    [:form {:on-submit (call-prevent-default #(on-article-creation-submit))}
      [:h4 "Create Article"]
      [input
       {:text "Id Captued Reference"
@@ -43,38 +66,18 @@
      [submit-button]]))
 
 (defn article-creator--inner
-  [{:keys [article-spec handler] :as props}]
+  [{:keys [article-spec] :as props}]
   [:div
-   [article-creator-form {:article-spec article-spec :handler handler}]
+   [article-creator-form props]
    [components-utils/errors-displayer props]
    [components-utils/success-message-displayer props]])
 
-(defn- state->serialized-article-spec [{:keys [article-spec]}]
-  (articles/serialize-article-spec article-spec))
-
-(defn- post-response->status [{:keys [error? data]}]
-  (if error?
-    {:errors data}
-    {:success-msg (make-success-msg data)}))
-
-(defn new-event-handler [state {:keys [hpost!]}]
-  "Returns a reified ArticleCreatorEvents for the component."
-  (reify ArticleCreatorEvents
-
-    (on-article-spec-update [_ new-spec]
-      (swap! state assoc :article-spec new-spec))
-
-    (on-article-creation-submit [_]
-      (let [resp-chan (-> @state state->serialized-article-spec hpost!)]
-        (swap! state assoc :status {})
-        (go (let [status (-> resp-chan <! post-response->status)]
-              (swap! state assoc :status status))
-            :done)))))
-
 (defn article-creator [props]
-  (let [state (r/atom {:article-spec {} :status {}})
-        handler (new-event-handler state props)]
+  (let [state (r/atom {:article-spec {} :status {}})]
     (fn []
-      (let [{:keys [article-spec status]} @state]
-        [article-creator--inner
-         (merge @state props {:handler handler})]))))
+      [article-creator--inner
+       (merge
+        @state
+        props
+        {:on-article-spec-update (handle-on-article-spec-update state props)
+         :on-article-creation-submit (handle-on-article-creation-submit state props)})])))
