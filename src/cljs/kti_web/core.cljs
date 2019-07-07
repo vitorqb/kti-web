@@ -16,6 +16,7 @@
              :refer [captured-refs-table]]
             [kti-web.components.edit-captured-reference-component
              :refer [edit-captured-ref-comp]]
+            [kti-web.components.capture-form :refer [capture-form]]
             [kti-web.components.utils :refer [submit-button input]]
             [kti-web.http
              :refer
@@ -39,8 +40,6 @@
             [reagent.core :as r]
             [reagent.session :as session]
             [reitit.frontend :as reitit]))
-
-(declare capture-form)
 
 ;; -------------------------
 ;; Routes
@@ -77,42 +76,6 @@
         #(go (>! modal-display-for-deletion-chan [:on-modal-display-for-deletion %]))}]
       [edit-captured-ref-comp {:hput! put-captured-reference!
                                :hget! get-captured-reference!}]]]))
-
-(defn capture-input [{:keys [on-change value]}]
-  [:div
-   [:span "Capture: "]
-   [:input {:type "text" :value value
-            :on-change (call-with-val on-change)
-            :style {:width "60%" :min-width "10cm"}}]
-   [:div [:i "(current value: " value ")"]]])
-
-(defn capture-form-inner [{:keys [loading? value result on-submit on-change]}]
-  [:div
-   [:h4 "Capture Form"]
-   [:form
-    {:on-submit on-submit}
-    [capture-input {:value value :on-change on-change}]
-    [submit-button {:text "Capture!"}]
-    [:div result]
-    (if loading? [:div "Loading..."])]])
-
-(defn capture-form [{:keys [post! c-done]}]
-  (let [state (r/atom {:value nil :loading? false :result nil})
-        extract-result
-        (fn [{:keys [data error?]}]
-          (if error?
-            "Error!"
-            (str "Created with id " (data :id) " and ref " (data :reference))))
-        handle-submit
-        (fn [e]
-          (swap! state assoc :loading? true :result nil)
-          (go (let [resp (-> @state :value post! <!)]
-                (swap! state assoc :loading? false :result (extract-result resp))
-                (and c-done (>! c-done 1)))))]
-    (fn [] (-> @state
-               (assoc :on-submit (call-prevent-default handle-submit)
-                      :on-change #(swap! state assoc :value %))
-               capture-form-inner))))
 
 (defn about-page []
   (fn [] [:span.main [:h1 "About kti-web"]]))
