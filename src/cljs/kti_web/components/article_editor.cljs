@@ -10,7 +10,6 @@
 
 ;; Reducers
 (defn reduce-on-article-id-change [state new-value]
-  {:pre [(number? new-value)]}
   (assoc state :selected-article-id new-value))
 
 (defn reset-state-for-id-submit

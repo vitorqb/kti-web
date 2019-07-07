@@ -24,7 +24,6 @@
   (assoc state :loading? false :status (->status state http-resp)))
 
 (defn reduce-on-delete-article-id-change [state new-value]
-  {:pre [(and new-value (number? new-value))]}
   (assoc state :delete-article-id new-value))
 
 ;; Handlers
