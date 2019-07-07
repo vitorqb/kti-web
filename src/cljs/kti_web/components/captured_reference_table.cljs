@@ -39,7 +39,7 @@
 (defn refs->data
   "Converts refs into rtable data."
   [refs]
-  (->> refs (sort-by :captured-at) reverse))
+  (sort-by :captured-at refs))
 
 (defn props->rtable-props
   "Extract the rtable props from the global props."
