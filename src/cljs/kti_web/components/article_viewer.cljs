@@ -7,15 +7,7 @@
    [kti-web.components.utils :as components-utils :refer [input submit-button]]
    [kti-web.event-handlers :refer [handle!-vec]]))
 
-(defprotocol ArticleViewerEvents
-  "Events for article viewer."
-
-  (on-selected-view-article-id-change [this new-value]
-    "Handles change of the value for the selected article id")
-
-  (on-selected-view-article-id-submit [this]
-    "Handles submission of the selected article id for viewing"))
-
+;; Helpers
 (defn- http-resp->status [{:keys [error? data]}]
   (if error?
     {:errors data}
@@ -25,6 +17,11 @@
   (when-not error?
     (articles/article->raw data)))
 
+;; Reducers
+(defn reduce-on-selected-view-article-id-change [state new-value]
+  (assoc state :selected-view-article-id new-value))
+
+;; Handlers
 (def view-article-id-selection
   [(fn before [s _ _]
      (assoc s :loading? true :status {} :view-article nil))
@@ -38,29 +35,33 @@
             :status (http-resp->status http-resp)
             :view-article (http-resp->view-article http-resp)))])
 
-(defn new-handler [state props]
-  (reify ArticleViewerEvents
+(defn handle-on-selected-view-article-id-change [state _]
+  (fn [new-value]
+    (swap! state reduce-on-selected-view-article-id-change new-value)))
 
-    (on-selected-view-article-id-change [_ new-value]
-      (swap! state assoc :selected-view-article-id new-value))
+(defn handle-on-selected-view-article-id-submit [state props]
+  (fn [] (handle!-vec nil state props view-article-id-selection)))
 
-    (on-selected-view-article-id-submit [_]
-      (handle!-vec nil state props view-article-id-selection))))
-
+;; State
 (def state (r/atom {:loading? false
                     :status {}
                     :view-article nil
                     :selected-view-article-id nil}))
 
+;; Components
 (defn article-viewer-inner
   "Pure component to edit an article"
-  [{:keys [view-article selected-view-article-id handler] :as props}]
+  [{:keys [view-article
+           selected-view-article-id
+           on-selected-view-article-id-submit
+           on-selected-view-article-id-change]
+    :as props}]
   [:div
    [:form {:on-submit (call-prevent-default
-                       #(on-selected-view-article-id-submit handler))}
+                       #(on-selected-view-article-id-submit))}
     [input {:text "ID: "
             :value selected-view-article-id
-            :on-change #(on-selected-view-article-id-change handler %)
+            :on-change #(on-selected-view-article-id-change %)
             :width "100px"
             :type "number"}]
     [submit-button]]
@@ -78,5 +79,10 @@
   [props]
   (fn []
     [article-viewer-inner
-     (merge @state props {:handler (new-handler state props)})]))
-
+     (merge
+      @state
+      props
+      {:on-selected-view-article-id-change
+       (handle-on-selected-view-article-id-change state props)
+       :on-selected-view-article-id-submit
+       (handle-on-selected-view-article-id-submit state props)})]))
