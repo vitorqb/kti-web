@@ -52,27 +52,31 @@
 (deftest test-confirmation-text
   (is (= (rc/confirmation-text 9) "Delete Captured Reference with id 9?")))
 
-(deftest test-captured-reference-deletor-modal
-  (let [[on-confirm-deletion-args on-confirm-deletion-saver] (utils/args-saver)
-        [on-abortion-args on-abortion-saver] (utils/args-saver)
-        props {:on-confirm-deletion on-confirm-deletion-saver
-               :on-abortion on-abortion-saver
-               :delete-captured-ref-id ::delete-captured-ref-id
-               :active? ::active?}
-        comp (rc/captured-reference-deletor-modal props)]
+(deftest test-captured-reference-deletor-modal--inner
+  (let [mount rc/captured-reference-deletor-modal--inner]
+
     (testing "on-confirmation calls on-confirm-deletion"
-      ((get-in comp [2 1 :on-confirmation]))
-      (is (= @on-confirm-deletion-args [[]])))
+      (let [[args saver] (utils/args-saver)
+            comp (mount {:on-confirm-deletion saver})]
+        ((get-in comp [2 1 :on-confirmation]))
+        (is (= @args [[]]))))
+
     (testing "on-abortion calls on-abortion"
-      ((get-in comp [2 1 :on-abortion]))
-      (is (= @on-abortion-args [[]])))
+      (let [[args saver] (utils/args-saver)
+            comp (mount {:on-abortion saver})]
+        ((get-in comp [2 1 :on-abortion]))
+        (is (= @args [[]]))))
+
     (testing "displays confirmation box title"
-      (is (= (get-in comp [2 1 :title]) rc/title)))
+      (is (= (get-in (mount) [2 1 :title]) rc/title)))
+
+    (testing "Parses :active? to modal"
+      (is (= (get-in (mount {:active? ::active?}) [1 :active?])
+             ::active?)))
+
     (testing "displays confirmation box text"
-      (with-redefs [rc/confirmation-text (fn [id]
-                                           (is (= id ::delete-captured-ref-id))
-                                           ::confirmation-text)]
-        (let [comp (rc/captured-reference-deletor-modal props)]
-          (is (= (get-in comp [2 1 :text]) ::confirmation-text)))))
-    (testing "parses :active? to modal"
-      (is (= (get-in comp [1 1 :active?] ::active?))))))
+      (let [props {:delete-captured-ref-id ::delete-captured-ref-id}]
+        (with-redefs [rc/confirmation-text (fn [id]
+                                             (is (= id ::delete-captured-ref-id))
+                                             ::confirmation-text)]
+          (is (= (get-in (mount props) [2 1 :text]) ::confirmation-text)))))))

@@ -1,7 +1,7 @@
 (ns ^:figwheel-hooks kti-web.core
   (:require [accountant.core :as accountant]
             [clerk.core :as clerk]
-            [cljs.core.async :refer [<! >! go]]
+            [cljs.core.async :refer [<! >! go] :as async]
             [kti-web.components.header :as header]
             [kti-web.components.article-viewer :refer [article-viewer]]
             [kti-web.components.article-creator :refer [article-creator]]
@@ -10,6 +10,8 @@
             [kti-web.components.review-creator :refer [review-creator]]
             [kti-web.components.review-deletor :refer [review-deletor]]
             [kti-web.components.review-editor :refer [review-editor]]
+            [kti-web.components.captured-reference-deletor-modal
+             :refer [captured-reference-deletor-modal]]
             [kti-web.components.captured-reference-table
              :refer [captured-refs-table]]
             [kti-web.components.edit-captured-reference-component
@@ -31,8 +33,6 @@
               put-review!
               get-review!
               delete-review!]]
-            [kti-web.instances.main-captured-reference-deletor-modal
-             :as main-captured-reference-deletor-modal]
             [kti-web.event-handlers :refer [gen-handler-vec]]
             [kti-web.state :refer [host init-state token]]
             [kti-web.utils :as utils :refer [call-prevent-default call-with-val]]
@@ -60,19 +60,21 @@
 
 ;; -----------------------------------------------------------------------------
 ;; Page components
+(def modal-display-for-deletion-chan (async/chan))
 (defn home-page []
   (fn []
     [:span.main
-     (main-captured-reference-deletor-modal/instance)
+     [captured-reference-deletor-modal
+      {:delete-captured-reference! delete-captured-reference!
+       :events-chan modal-display-for-deletion-chan}]
      [:h1 "Welcome to kti-web"]
      [:div
       [:h3 "Captured References"]
       [capture-form {:post! post-captured-reference!}]
       [captured-refs-table
-       (merge
-        {:get-paginated-captured-references! get-paginated-captured-references!}
-        (select-keys main-captured-reference-deletor-modal/handlers
-                     [:on-modal-display-for-deletion]))]
+       {:get-paginated-captured-references! get-paginated-captured-references!
+        :on-modal-display-for-deletion
+        #(go (>! modal-display-for-deletion-chan [:on-modal-display-for-deletion %]))}]
       [edit-captured-ref-comp {:hput! put-captured-reference!
                                :hget! get-captured-reference!}]]]))
 
