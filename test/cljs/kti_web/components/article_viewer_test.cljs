@@ -9,32 +9,19 @@
    [kti-web.test-utils :as utils]
    [kti-web.test-factories :as factories]))
 
-(defn new-test-handler [calls-atom]
-  (let [save-call! (fn [kw args] (swap! calls-atom update kw #(conj % args)))]
-    (reify rc/ArticleViewerEvents
-
-      (on-selected-view-article-id-change [_ new-value]
-        (save-call! :on-selected-view-article-id-change [new-value]))
-
-      (on-selected-view-article-id-submit [_]
-        (save-call! :on-selected-view-article-id-submit [])))))
-
-(def handler-calls (atom {}))
-(def test-handler (new-test-handler handler-calls))
-
-(deftest test-new-handler--on-selected-view-article-id-change
+(deftest test-handle-on-selected-view-article-id-change
   (let [state (atom {:selected-view-article-id 999})
-        handler (rc/new-handler state {})]
-    (rc/on-selected-view-article-id-change handler 888)
+        handler (rc/handle-on-selected-view-article-id-change state {})]
+    (handler 888)
     (is (= (:selected-view-article-id @state) 888))))
 
-(deftest test-new-handler--on-selected-view-article-id-submit
+(deftest test-handle-on-selected-view-article-id-submit
   (let [[args saver] (utils/args-saver)]
     (with-redefs [event-handlers/handle!-vec #(do (apply saver %&) (constantly nil))]
       (let [state ::state
             props ::props
-            handler (rc/new-handler state props)]
-        (rc/on-selected-view-article-id-submit handler)
+            handler (rc/handle-on-selected-view-article-id-submit state props)]
+        (handler)
         (is (= @args [[nil ::state ::props rc/view-article-id-selection]]))))))
 
 (deftest test-article-viewer-inner
@@ -53,12 +40,13 @@
           4 :action-link)))
 
     (testing "Id input"
-      (reset! handler-calls {})
-      (let [comp (mount {:selected-view-article-id 999 :handler test-handler})]
+      (let [[args saver] (utils/args-saver)
+            comp (mount {:selected-view-article-id 999
+                         :on-selected-view-article-id-change saver})]
         (is (= (get-in comp [1 2 1 :value] 999)))
-        (rc/on-selected-view-article-id-change test-handler 888)
-        (is (= (@handler-calls :on-selected-view-article-id-change)
-               [[888]]))))
+        (get-in comp [1 2 1 :value] 999)
+        ((get-in comp [1 2 1 :on-change]) 888)
+        (is (= @args [[888]]))))
 
     (testing "Displays errors"
       (is (= [components-utils/errors-displayer {:status ::a}]
@@ -102,36 +90,46 @@
       (is (= (-> ((rc/article-viewer {})) (get 1) (select-keys [::a ::c]))
              {::a ::b ::c ::d}))))
 
-  (testing "Passes handler"
-    (with-redefs [rc/new-handler (constantly ::new-handler)]
-      (is (= (-> ((rc/article-viewer {})) (get-in [1 :handler])) ::new-handler))))
+  (testing "Passes handlers"
+    (with-redefs [rc/handle-on-selected-view-article-id-change
+                  (constantly ::on-selected-view-article-id-change)
+                  rc/handle-on-selected-view-article-id-submit
+                  (constantly ::on-selected-view-article-id-submit)]
+      (let [comp ((rc/article-viewer {}))]
+        (are [k v] (= (get-in comp [1 k]) v)
+          :on-selected-view-article-id-change ::on-selected-view-article-id-change
+          :on-selected-view-article-id-submit ::on-selected-view-article-id-submit))))
 
   (testing "Changing selected-view-article-id"
     (with-redefs [rc/state (atom {::a ::b :selected-view-article-id ::c})]
       (let [comp1 (rc/article-viewer {})
-            handler (get-in (comp1) [1 :handler])]
-        (rc/on-selected-view-article-id-change handler ::d)
+            on-selected-view-article-id-change
+            (get-in (comp1) [1 :on-selected-view-article-id-change]) ]
+        (on-selected-view-article-id-change ::d)
         (is (= @rc/state {::a ::b :selected-view-article-id ::d}))))))
 
 (deftest test-article-viewer-submit
   (let [[args saver] (utils/args-saver)
         get-chan (chan 1)
         comp1 (rc/article-viewer {:get-article! #(do (apply saver %&) get-chan)})
-        handler (get-in (comp1) [1 :handler])]
+        on-selected-view-article-id-change
+        (get-in (comp1) [1 :on-selected-view-article-id-change])
+        on-selected-view-article-id-submit
+        (get-in (comp1) [1 :on-selected-view-article-id-submit])]
     (async
      done
      (go
        ;; User selects an id
-       (rc/on-selected-view-article-id-change handler 987)
+       (on-selected-view-article-id-change 987)
        ;; And submits
-       (let [resp-chan (rc/on-selected-view-article-id-submit handler)]
+       (let [resp-chan (on-selected-view-article-id-submit)]
          ;; get-article! called with correct args
          (is (= @args [[987]]))
          ;; and we are loading
          (is (true? (get-in (comp1) [1 :loading?])))
          ;; response is sent
          (>! get-chan {:data factories/article})
-         (is (= :done (<! resp-chan)))
+         (<! resp-chan)
          ;; no longer loading
          (is (false? (get-in (comp1) [1 :loading?])))
          ;; correct view-article is set
@@ -140,11 +138,11 @@
          ;; and success msg
          (is (= (get-in (comp1) [1 :status]) {:success-msg "Success!"}))
          ;; user updates a new id
-         (rc/on-selected-view-article-id-change handler 654)
-         (let [resp-chan (rc/on-selected-view-article-id-submit handler)]
+         (on-selected-view-article-id-change 654)
+         (let [resp-chan (on-selected-view-article-id-submit)]
            ;; We respond with failure
            (>! get-chan {:error? true :data ::error})
-           (is (= :done (<! resp-chan)))
+           (<! resp-chan)
            ;; Which is now set
            (is (= (get-in (comp1) [1 :status]) {:errors ::error}))
            ;; And the view-article is null
