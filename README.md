@@ -9,7 +9,7 @@ This is a personal project which is a frontend to https://github.com/vitorqb/kti
 As simple as this:
 
 ```shell
-curl -L -o kti-web.jar https://github.com/vitorqb/kti-web/releases/download/0.7.0/kti-web.jar && java -jar kti-web.jar
+curl -L -o kti-web.jar https://github.com/vitorqb/kti-web/releases/download/0.8.0/kti-web.jar && java -jar kti-web.jar
 ```
 
 Then open your browser at `127.0.0.1:3000`.
