@@ -53,12 +53,15 @@
               :infer-externs true
               :pretty-print  false
               :npm-deps      false
-              :foreign-libs [{:file "dist/index_bundle.js"
-                              :provides ["react" "react-dom" "react-select" "react-table"]
+              :foreign-libs [{:file "dist/main.js"
+                              :provides ["react" "react-dom" "react-select"]
                               :global-exports {react React
                                                react-dom ReactDOM
-                                               react-select Select
-                                               react-table ReactTable}}]}}
+                                               react-select Select}}
+                             {:file "dist/react_table.js"
+                              :requires ["react" "react-dom"]
+                              :provides ["react-table"]
+                              :global-exports {react-table ReactTable}}]}}
             :test
             {:source-paths ["src/cljs" "src/cljc" "test/cljs"]
              :compiler {:main kti-web.doo-runner
@@ -68,12 +71,15 @@
                         :optimizations :whitespace
                         :pretty-print true
                         :npm-deps false
-                        :foreign-libs [{:file "dist/index_bundle.js"
-                                        :provides ["react" "react-dom" "react-select" "react-table"]
+                        :foreign-libs [{:file "dist/main.js"
+                                        :provides ["react" "react-dom" "react-select"]
                                         :global-exports {react React
                                                          react-dom ReactDOM
-                                                         react-select Select
-                                                         react-table ReactTable}}]
+                                                         react-select Select}}
+                                       {:file "dist/react_table.js"
+                                        :requires ["react" "react-dom"]
+                                        :provides ["react-table"]
+                                        :global-exports {react-table ReactTable}}]
                         :infer-externs true}}}}
 
   :doo {:build "test"

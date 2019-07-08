@@ -4,9 +4,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import Select from 'react-select';
-import ReactTable from 'react-table'
 
 window.React = React;
 window.ReactDOM = ReactDOM;
 window.Select = Select;
-window.ReactTable = ReactTable
