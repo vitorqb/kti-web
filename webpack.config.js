@@ -1,6 +1,9 @@
 module.exports = {
-    entry: './src/js/index.js',
+    entry: {
+        main: './src/js/index.js',
+        react_table: './src/js/react-table.js'
+    },
     output: {
-        filename: 'index_bundle.js'
+        filename: '[name].js'
     }
 }
