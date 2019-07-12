@@ -64,3 +64,15 @@ a:hover {
     padding: 20px;
     max-width: 350px;
 }
+
+.captured-reference-table_filters-picker div {
+    display: inline-block;
+}
+
+.add-filter-picker-button {
+    background-color: green;
+}
+
+.remove-filter-button {
+    background-color: red;
+}

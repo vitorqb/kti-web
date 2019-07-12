@@ -73,12 +73,12 @@
    {:http-fn http/get
     :url (api-url "captured-references")}))
 
-(defn get-paginated-captured-references! [{:keys [page page-size]}]
-  {:pre [(number? page) (number? page-size)]}
+(defn get-paginated-captured-references! [{:keys [page page-size filters]}]
+  {:pre [(number? page) (number? page-size) (or (nil? filters) (map filters))]}
   (run-req!
    {:http-fn http/get
     :url (api-url "captured-references")
-    :query-params {:page page :page-size page-size}}))
+    :query-params (merge {:page page :page-size page-size} filters)}))
 
 (defn get-captured-reference! [id]
   (run-req!

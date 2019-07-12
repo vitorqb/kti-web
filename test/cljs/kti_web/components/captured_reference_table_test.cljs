@@ -7,6 +7,21 @@
             [kti-web.test-utils :as utils]
             [kti-web.components.rtable :refer [rtable]]))
 
+(deftest test-handle-filters-change
+  (let [state (atom {})
+        handler (rc/handle-filters-change state {})]
+    (is (= (handler [::foo]) {:filters [::foo]}))
+    (is (= @state {:filters [::foo]}))
+
+    (is (= (handler []) {:filters []}))
+    (is (= @state {:filters []}))))
+
+(deftest test-handle-add-empty-filter
+  (let [state (atom {:filters []})
+        handler (rc/handle-add-empty-filter state {})]
+    (is (= (handler) {:filters [rc/empty-filter]}))
+    (is (= @state {:filters [rc/empty-filter]}))))
+
 (deftest test-delete-captured-ref-action-button
   (let [[on-modal-display-for-deletion-args on-modal-display-for-deletion-fun]
         (utils/args-saver)
@@ -52,7 +67,7 @@
             fn-refresh! (constantly ::fn-refresh-response)
             props {:refs refs
                    :fn-refresh! fn-refresh!
-                   :table-state {:page page :pageSize pageSize :pages pages}}]
+                   :table {:page page :pageSize pageSize :pages pages}}]
         (is (= (rc/props->rtable-props props)
                {:data ::refs->data-response
                 :page page
@@ -62,14 +77,80 @@
                 :manual true
                 :pages pages}))))))
 
+(deftest test-add-filter-picker-button
+  (testing "Calls on-add-empty-filter on click"
+    (let [[args saver] (utils/args-saver)
+          comp (rc/add-filter-picker-button {:on-add-empty-filter saver})]
+      ((get-in comp [1 :on-click]))
+      (is (= @args [[]])))))
+
+(deftest test-filters-picker
+
+  (testing "Empty"
+    (let [comp (rc/filters-picker {:filters []})]
+      (is (= (get comp 1) []))))
+
+  (testing "One Long"
+    (let [[args saver] (utils/args-saver)
+          filter {:value "value" :name "name"}
+          props {:filters [filter] :on-filters-change saver}
+          comp (-> (rc/filters-picker props)
+                   (update 1 vec))
+          editted-filter (assoc filter :name "nam")]
+      (is (= (get-in comp [1 0 0]) rc/filter-picker))
+      (is (= (get-in comp [1 0 1 :filter]) filter))
+      (is (= (get-in comp [1 0 1 :key]) 0))
+      ;; The :on-filter-change must call :on-filters-change
+      ((get-in comp [1 0 1 :on-filter-change]) editted-filter)
+      (is (= @args [[[editted-filter]]]))))
+
+  (testing "Add filter button"
+    (let [props {:on-add-filter-button ::on-add-filter-button}
+          comp (rc/filters-picker props)]
+      (is (= (get-in comp [2]) [rc/add-filter-picker-button props])))))
+
+(deftest test-filter-picker
+
+  (let [[args saver] (utils/args-saver)
+        filter {:name "name" :value "value"}
+        props {:filter filter :on-filter-change saver}
+        comp (rc/filter-picker props)]
+
+    (testing "Renders filter name input"
+      (reset! args [])
+      (is (= (get-in comp [1 0]) rc/filter-picker-name-input))
+      (is (= (get-in comp [1 1 :value]) "name"))
+      ;; Calling on-change should trigger a call to on-filter-change
+      ((get-in comp [1 1 :on-change]) "nam")
+      (is (= @args [[(assoc filter :name "nam")]])))
+
+    (testing "Renders filter value input"
+      (reset! args [])
+      (is (= (get-in comp [2 0]) rc/filter-picker-value-input))
+      (is (= (get-in comp [2 1 :value]) "value"))
+      ;; Calling on-change should trigger a call to on-filter-change
+      ((get-in comp [2 1 :on-change]) "value1")
+      (is (= @args [[(assoc filter :value "value1")]])))))
+
+(deftest test-filters->filter-pickers
+  (let [filters [{:name "foo" :value "bar"} {:name "baz" :value "boz"}]
+        props {:filters filters}]
+    (testing "Calls on-filter-change when removing a filter"
+      (let [[args saver] (utils/args-saver)
+            props (assoc props :on-filters-change saver)
+            filter-pickers (rc/filters->filter-pickers filters props)
+            first-filter-picker (first filter-pickers)]
+        ((get-in first-filter-picker [1 :on-remove-filter]))
+        (is (= @args [[(drop 1 filters)]]))))))
+
 (deftest test-captured-refs-table-inner
   (let [mount rc/captured-refs-table-inner
-        get-refresh-button #(get % 2)
-        get-table #(get % 3)]
+        get-refresh-button #(get % 3)
+        get-table #(get % 4)]
     (testing "Calls fn-refresh!"
       (let [[args fun] (utils/args-saver)
             table-state {:page 1 :pageSize 2}
-            comp (mount {:fn-refresh! fun :table-state table-state})]
+            comp (mount {:fn-refresh! fun :table table-state})]
         ((-> comp get-refresh-button (get-in [1 :on-click])) ::foo)
         (is (= @args [[{:page 1 :pageSize 2}]]))))
     (testing "Mounts table..."
@@ -85,41 +166,45 @@
       (let [state {}
             event {:page 1 :pageSize 2}]
         (is (= (r-before state nil event)
-               {:table-state {:loading true :page 1 :pageSize 2}
+               {:table {:loading true :page 1 :pageSize 2}
                 :refs nil
                 :status nil}))))
     (testing "action"
       (let [get-paginated-captured-references! identity
+            filters [{:name "foo" :value "bar"} rc/empty-filter]
             state-page 2
             state-page-size 100
-            state {:table-state {:page state-page :pageSize state-page-size}}
+            state {:filters filters
+                   :table {:page state-page :pageSize state-page-size}}
             event-page 3
             event-page-size 200
             event {:page event-page :pageSize event-page-size}
             extra-args {:get-paginated-captured-references!
                         get-paginated-captured-references!}]
         (is (= (action state extra-args event)
-               {:page (inc event-page) :page-size event-page-size}))))
+               {:page (inc event-page)
+                :page-size event-page-size
+                :filters {"foo" "bar"}}))))
     (testing "r-after"
       (is (= (r-after {::a ::b} {} nil {:error? true :data ::c})
              {::a ::b
-              :table-state {:loading false}
+              :table {:loading false}
               :status {:errors ::c}}))
       (let [resp-data {:page 1 :page-size 2 :total-items 3 :items [4 5]}]
         (is (= (r-after {} {} nil {:error? false :data resp-data})
                {:refs [4 5]
-                :table-state {:pages 2 :loading false}}))))))
+                :table {:pages 2 :loading false}}))))))
 
 (deftest test-handler-wrapper-avoid-useless-fetching
   (testing "page/pageSize changes"
-    (let [props {:table-state {:page 1 :pageSize 2}}
+    (let [props {:table {:page 1 :pageSize 2}}
           event {:page 2 :pageSize 3}
           handler (constantly ::handler-resp)
           wrapped-handler (rc/handler-wrapper-avoid-useless-fetching handler props)]
       (is (= (wrapped-handler event) ::handler-resp))))
   (testing "no change"
     (let [event {:page 1 :pageSize 2}
-          props {:table-state event}
+          props {:table event}
           handler (constantly ::handler-resp)
           wrapped-handler (rc/handler-wrapper-avoid-useless-fetching handler props)]
       (is (= (wrapped-handler event) nil)))))
@@ -142,7 +227,7 @@
       (let [comp (comp1)
             props (get comp 1)
             {:keys [refs status]} props
-            table-loading (get-in props [:table-state :loading])]
+            table-loading (get-in props [:table :loading])]
         (is (= true table-loading))
         (is (= nil refs))
         (is (= nil status)))
@@ -157,7 +242,7 @@
          (let [comp (comp1)
                props (get comp 1)
                {:keys [refs status]} props
-               table-loading (get-in props [:table-state :loading])]
+               table-loading (get-in props [:table :loading])]
            (is (= false table-loading))
            (is (= [factories/captured-ref] refs))
            (is (= nil status)))
@@ -169,7 +254,7 @@
            (let [comp (comp1)
                  props (get comp 1)
                  {:keys [refs status]} props
-                 table-loading (get-in props [:table-state :loading])]
+                 table-loading (get-in props [:table :loading])]
              (is (= true table-loading))
              (is (= nil refs))
              (is (= nil status)))
@@ -181,7 +266,7 @@
          (let [comp (comp1)
                props (get comp 1)
                {:keys [refs status]} props
-               table-loading (get-in props [:table-state :loading])]
+               table-loading (get-in props [:table :loading])]
            (is (= false table-loading))
            (is (= nil refs))
            (is (= {:errors {::some "error"}} status)))

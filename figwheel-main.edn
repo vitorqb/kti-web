@@ -1,1 +1,2 @@
-{:ring-handler kti-web.handler/app}
+{:ring-handler kti-web.handler/app
+ :open-url false}
