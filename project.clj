@@ -54,10 +54,13 @@
               :pretty-print  false
               :npm-deps      false
               :foreign-libs [{:file "dist/main.js"
-                              :provides ["react" "react-dom" "react-select"]
+                              :provides ["react" "react-dom"]
                               :global-exports {react React
-                                               react-dom ReactDOM
-                                               react-select Select}}
+                                               react-dom ReactDOM}}
+                             {:file "dist/react_select.js"
+                              :requires ["react" "react-dom"]
+                              :provides ["react-select"]
+                              :global-exports {react-select Select}}
                              {:file "dist/react_table.js"
                               :requires ["react" "react-dom"]
                               :provides ["react-table"]
@@ -72,10 +75,13 @@
                         :pretty-print true
                         :npm-deps false
                         :foreign-libs [{:file "dist/main.js"
-                                        :provides ["react" "react-dom" "react-select"]
+                                        :provides ["react" "react-dom"]
                                         :global-exports {react React
-                                                         react-dom ReactDOM
-                                                         react-select Select}}
+                                                         react-dom ReactDOM}}
+                                       {:file "dist/react_select.js"
+                                        :requires ["react" "react-dom"]
+                                        :provides ["react-select"]
+                                        :global-exports {react-select Select}}
                                        {:file "dist/react_table.js"
                                         :requires ["react" "react-dom"]
                                         :provides ["react-table"]
