@@ -23,7 +23,7 @@
   [{:keys [path-for-fn host-value on-host-value-change token-value
            on-token-value-change]}]
   [:header
-   [:p
+   [:div
     [host-input {:on-change on-host-value-change :value host-value}]
     [token-input {:on-change on-token-value-change :value token-value}]
     [:a {:href (path-for-fn :index)} "Home"] " | "

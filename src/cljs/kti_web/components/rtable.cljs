@@ -1,6 +1,6 @@
 (ns kti-web.components.rtable
   (:require
-   [react-table :as ReactTable]
+   ["react-table" :default ReactTable]
    [reagent.core :as r]
    [clojure.string :as str]))
 

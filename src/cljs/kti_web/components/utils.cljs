@@ -2,7 +2,7 @@
   (:require
    [kti-web.utils :as utils]
    [reagent.core :as r]
-   [react-select :as Select]))
+   ["react-select" :default Select]))
 
 (defn select-wrapper
   "Wrapper around react-select providing a select component"

@@ -3,7 +3,7 @@
    [cljs.core.async :refer [go <! >! timeout]]
    [reagent.core :as r]
    [kti-web.components.utils
-    :refer [submit-button call-prevent-default input]
+    :refer [submit-button input]
     :as components-utils]
    [kti-web.components.select-captured-ref :refer [select-captured-ref]]
    [kti-web.utils :refer [call-prevent-default call-with-val to-str]]))

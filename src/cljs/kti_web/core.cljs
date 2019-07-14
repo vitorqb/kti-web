@@ -1,4 +1,4 @@
-(ns ^:figwheel-hooks kti-web.core
+(ns kti-web.core
   (:require [accountant.core :as accountant]
             [clerk.core :as clerk]
             [cljs.core.async :refer [<! >! go] :as async]
@@ -139,7 +139,7 @@
   (init-state)
   (r/render [current-page] (.getElementById js/document "app")))
 
-(defn ^:after-load re-render [] (mount-root))
+(defn re-render [] (mount-root))
 
 (defn init! []
   (clerk/initialize!)

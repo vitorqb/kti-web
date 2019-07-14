@@ -1,0 +1,5 @@
+#!/bin/bash
+USAGE="$0
+Cleans both FE and BE derived assets.
+"
+rm -rf ./target ./resources/public/js/compiled ./resources/public/css/compiled

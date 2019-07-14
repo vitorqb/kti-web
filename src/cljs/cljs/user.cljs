@@ -1,6 +1,7 @@
 (ns cljs.user
   (:require
-   [cljs.test :as test :include-macros]))
+   [cljs.test :as test :include-macros true]
+   [kti-web.state]))
 
 (defn set-token!
   "A shortcut to set the current token"
