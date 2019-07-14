@@ -1,6 +1,5 @@
 (ns kti-web.repl
   (:use kti-web.handler
-        figwheel-sidecar.repl-api
         ring.server.standalone
         [ring.middleware file-info file]))
 

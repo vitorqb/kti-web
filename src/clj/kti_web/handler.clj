@@ -8,7 +8,7 @@
 (def mount-target
   [:div#app
    [:h3 "Welcome to kti-web"]
-   [:p "please wait while Figwheel is waking up ..."]
+   [:p "please wait while kti is waking up ..."]
    [:p "(Check the js console for hints if nothing exсiting happens.)"]])
 
 (defn head []
@@ -16,15 +16,15 @@
    [:meta {:charset "utf-8"}]
    [:meta {:name "viewport"
            :content "width=device-width, initial-scale=1"}]
-   (include-css (if (env :dev) "/css/site.css" "/css/site.min.css"))
-   (include-css (if (env :dev) "/css/react-table.css" "/css/react-table.min.css" ))])
+   (include-css "/css/site.css")
+   (include-css "/css/react-table.css")])
 
 (defn loading-page []
   (html5
    (head)
    [:body {:class "body-container"}
     mount-target
-    (include-js (if (env :dev) "/cljs-out/dev-main.js" "/js/app.js"))]))
+    (include-js "/js/compiled/app.js")]))
 
 (defn index-handler
   [_request]

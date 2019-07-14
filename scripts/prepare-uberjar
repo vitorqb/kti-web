@@ -1,0 +1,22 @@
+#!/bin/bash
+USAGE="$0
+Runs all steps to derive an uberjar with BE and FE.
+"
+
+function clean() {
+    echo "-> Cleaning..."
+    ./scripts/clean
+}
+
+function compileJs() {
+    echo "-> Compiling js (release)..."
+    ./scripts/compile-js-for-release
+}
+
+function generateUberjar() {
+    echo "-> Creating uberjar with lein (prod)..."
+    lein uberjar
+}
+
+
+export LEIN_SNAPSHOTS_IN_RELEASE=1 && clean && compileJs && generateUberjar

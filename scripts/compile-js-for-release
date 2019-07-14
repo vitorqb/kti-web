@@ -1,0 +1,5 @@
+#!/bin/bash
+USAGE="$0
+Compiles the js for a release.
+"
+npx shadow-cljs release app

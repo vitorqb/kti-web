@@ -34,110 +34,103 @@ You will receive an email with the token.
 As of now the minimum version is 1.4.3.
 https://github.com/vitorqb/kti/releases/tag/1.4.3
 
-## Development mode
+## Development tools
 
-First, you will need to install the npm dependencies. We use yarn + webpack. This should do it:
+This project uses `cljs-shadow`. Make sure you have npm and yarn installed.
 
-```
-yarn install && scripts/compile-webpack.bash
-```
+First, install npm dependencies using yarn:
 
-The project uses figwheel-main (https://github.com/bhauman/figwheel-main) for development builds.
-
-To start the Figwheel compiler, navigate to the project folder and run the following command in the terminal:
-
-```
-lein run -m figwheel.main -b dev --repl
+```sh
+yarn install
 ```
 
-This runs the build in the `:dev` profile, starts a development server at http://localhost:9500, hot-reloads on changes and starts an interactive repl.
+Then start the shadow-cljs server
+```sh
+npx shadow-cljs server
 
-You can also use the main entrypoint for a development server without figwheel:
-
+> [...]
+> shadow-cljs - HTTP server available at http://localhost:9500
+> shadow-cljs - server version: 2.8.40 running at http://localhost:9501
+> shadow-cljs - nREPL server started on port 9502
 ```
-lein do clean, run
+
+And watch the `app` build.
+```sh
+npx shadow-cljs watch app
+
+> shadow-cljs - connected to server
+> shadow-cljs - watching build :app
+> [:app] Configuring build.
+> [:app] Compiling ...
+> [...]
 ```
 
-The application will now be available at [http://localhost:3000](http://localhost:3000).
+The application will now be available at [http://localhost:9500](http://localhost:9500).
+The shadow-cljs server will be at [http://localhost:9501](http://localhost:9501).
+The Nrepl server will be available at [http://localhost:9502](http://localhost:9502).
 
-For connecting to a standalone backend running locally inside a docker (good for development), see
-[dockerfiles/kti/Readme.org](dockerfiles/kti/Readme.org)
+If you want to connect emacs + cider, I have the following in my .emacs
+```emacs-lisp
+;; Adds a type of cider cljs repl specifically for kti-web
+(pushnew
+ '(ktiweb
+   "(do (require 'shadow.cljs.devtools.api) (shadow.cljs.devtools.api/repl :app))"
+   cider-check-shadow-cljs-requirements)
+ cider-cljs-repl-types)
 
-
-### Optional development tools
-
-Start the browser REPL:
-
+(defun ktiweb-cider-connect-cljs ()
+  "Connects cider to a running `shadow-cljs` nrepl server."
+  (interactive)
+  (-let [default-directory ${PATH_TO_REPO_ROOT}]
+    (cider-connect-cljs
+     '(:host "localhost"
+       :port 9502
+       :project-dir ${PATH_TO_REPO_ROOT}
+       :cljs-repl-type ktiweb))))
 ```
-$ lein repl
-```
-The Jetty server can be started by running:
 
-```clojure
-(start-server)
-```
-and stopped by running:
-```clojure
-(stop-server)
-```
+You will probably want to setup a backend as well. For connecting to a
+standalone backend running locally inside a docker (good for
+development), see [dockerfiles/kti/Readme.org](dockerfiles/kti/Readme.org)
+
 
 ## Running the tests
-To run [cljs.test](https://github.com/clojure/clojurescript/blob/master/src/main/cljs/cljs/test.cljs) tests, please use
+There are two ways of running tests. The first is using the shadow-cljs built-in
+reporter:
 
+```sh
+npx shadow-cljs watch test-browser
+
+> shadow-cljs - config: /home/vitor/mygit/kti-web/shadow-cljs.edn  cli version: 2.8.40  node: v11.15.0
+> shadow-cljs - connected to server
+> shadow-cljs - watching build :test
+> [:test] Configuring build.
+> [:test] Compiling ...
+> [...]
 ```
-lein doo
+
+Then navigate to [http://localhost:9503](http://localhost:9503).
+
+The second option is to run using karma.
+
+First watch the test-karma build
+```sh
+npx shadow-cljs watch test-karma 
 ```
 
-As of now we only test in firefox. Those depend on `karma karma-firefox-launcher karma-cljs-test`, which should be installed locally using npm.
-
-Running this command at the project root should be enough:
-
-```
-npm install
+And now run karma
+```sh
+npx karma start
 ```
 
 ## Building for release
 
-```
-lein do clean, uberjar
-```
-
-## Deploying to Heroku
-
-Make sure you have [Git](http://git-scm.com/downloads) and [Heroku toolbelt](https://toolbelt.heroku.com/) installed, then simply follow the steps below.
-
-Optionally, test that your application runs locally with foreman by running.
-
-```
-foreman start
+To compile just the js part:
+```sh
+./scripts/compile-js-for-release
 ```
 
-Now, you can initialize your git repo and commit your application.
-
+To prepare a uberjar with a static file handler and the js:
+```sh
+./scripts/prepare-uberjar
 ```
-git init
-git add .
-git commit -m "init"
-```
-create your app on Heroku
-
-```
-heroku create
-```
-
-optionally, create a database for the application
-
-```
-heroku addons:add heroku-postgresql
-```
-
-The connection settings can be found at your [Heroku dashboard](https://dashboard.heroku.com/apps/) under the add-ons for the app.
-
-deploy the application
-
-```
-git push heroku master
-```
-
-Your application should now be deployed to Heroku!
-For further instructions see the [official documentation](https://devcenter.heroku.com/articles/clojure).

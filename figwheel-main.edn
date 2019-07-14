@@ -1,2 +1,0 @@
-{:ring-handler kti-web.handler/app
- :open-url false}

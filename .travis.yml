@@ -2,9 +2,10 @@ dist: xenial
 language: clojure
 services: 
   - xvfb
-install: yarn install && ./scripts/compile-webpack.bash
-script: lein doo firefox once
+install: yarn install && npx shadow-cljs compile test-karma
+script: npx karma start --single-run
 sudo: true
 cache:
   directories:
   - $HOME/.m2
+  - .shadow-cljs
