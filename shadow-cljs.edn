@@ -29,7 +29,7 @@
   [yogthos/config "1.1.1"]
 
   ;; Misc (clj+cljs) deps
-  [metosin/reitit "0.2.13"]
+  [metosin/reitit "0.3.9"]
 
   ;; Dev deps
   [binaryage/devtools "0.9.10"]
