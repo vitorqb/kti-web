@@ -22,6 +22,33 @@
     (is (= (handler) {:filters [rc/empty-filter]}))
     (is (= @state {:filters [rc/empty-filter]}))))
 
+(deftest test-handle-show-article
+  ;; Simple call the props handler
+  (let [on-show-article #(apply vector :on-show-article %&)
+        props {:on-show-article on-show-article}
+        handler (rc/handle-show-article {} props)]
+    (is (= [:on-show-article 99]
+           (handler 99)))))
+
+(deftest test-article-id-action-button
+
+  (testing "With article id"
+    (let [[args saver] (utils/args-saver)
+          article-id 99
+          props {:article-id article-id :on-show-article saver}
+          comp (rc/article-id-action-button props)]
+      (is (= :button (get comp 0)))
+      (is (= article-id (get comp 2)))
+      (let [on-click (get-in comp [1 :on-click])]
+        (is (fn? on-click))
+        (on-click)
+        (is (= [[article-id]] @args)))))
+
+  (testing "No article id"
+    (is (nil? (rc/article-id-action-button {})))
+    (is (nil? (rc/article-id-action-button {:article-id nil})))
+    (is (nil? (rc/article-id-action-button {:article-id ""})))))
+
 (deftest test-delete-captured-ref-action-button
   (let [[on-modal-display-for-deletion-args on-modal-display-for-deletion-fun]
         (utils/args-saver)

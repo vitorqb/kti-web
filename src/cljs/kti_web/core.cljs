@@ -37,6 +37,7 @@
             [kti-web.event-handlers :refer [gen-handler-vec]]
             [kti-web.state :refer [host init-state token]]
             [kti-web.utils :as utils :refer [call-prevent-default call-with-val]]
+            [kti-web.navigation-subscription :as navigation-subscription]
             [reagent.core :as r]
             [reagent.session :as session]
             [reitit.frontend :as reitit]))
@@ -55,11 +56,16 @@
     (:path (reitit/match-by-name router route params))
     (:path (reitit/match-by-name router route))))
 
-(path-for :about)
+;; -----------------------------------------------------------------------------
+;; Navigation channel
+(let [page-nav-sub (navigation-subscription/create-page-navigation-subscription)]
+  (defonce publish-page-nav! (:publish! page-nav-sub))
+  (defonce subscribe-page-nav! (:subscribe! page-nav-sub)))
 
 ;; -----------------------------------------------------------------------------
 ;; Page components
-(def modal-display-for-deletion-chan (async/chan))
+(defonce modal-display-for-deletion-chan (async/chan))
+(defonce article-viewer-events-chan (async/chan))
 (defn home-page []
   (fn []
     [:span.main
@@ -73,20 +79,33 @@
       [captured-refs-table
        {:get-paginated-captured-references! get-paginated-captured-references!
         :on-modal-display-for-deletion
-        #(go (>! modal-display-for-deletion-chan [:on-modal-display-for-deletion %]))}]
+        #(go (>! modal-display-for-deletion-chan [:on-modal-display-for-deletion %]))
+        :on-show-article
+        #(accountant/navigate! (path-for :article) {:id %})}]
       [edit-captured-ref-comp {:hput! put-captured-reference!
                                :hget! get-captured-reference!}]]]))
 
 (defn about-page []
   (fn [] [:span.main [:h1 "About kti-web"]]))
 
+(defn- navigated-page->show-article-event [{{id :id} :query-params}]
+  (and id [:on-show-article (int id)]))
+
 (defn article-page
   "A page for articles =D"
   []
+  (let [navigation-subs-chan (async/chan)]
+    (subscribe-page-nav! :article navigation-subs-chan)
+    (async/go-loop []
+      (some->> (<! navigation-subs-chan)
+               navigated-page->show-article-event
+               (>! article-viewer-events-chan))
+      (recur)))
   (fn []
     [:div
      [:h3 "Articles!"]
-     [article-viewer {:get-article! get-article!}]
+     [article-viewer {:get-article! get-article!
+                      :events-chan article-viewer-events-chan}]
      [article-creator {:hpost! post-article!}]
      [article-editor {:get-article! get-article! :put-article! put-article!}]
      [article-deletor {:delete-article! delete-article!}]]))
@@ -153,7 +172,7 @@
         (session/put! :route {:current-page (page-for current-page)
                               :route-params route-params})
         (clerk/navigate-page! path)
-        ))
+        (publish-page-nav! match)))
     :path-exists?
     (fn [path]
       (boolean (reitit/match-by-path router path)))})

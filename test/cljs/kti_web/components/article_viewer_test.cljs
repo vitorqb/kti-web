@@ -24,6 +24,19 @@
         (handler)
         (is (= @args [[nil ::state ::props rc/view-article-id-selection]]))))))
 
+(deftest test-handle-on-show-article
+  (let [[args saver] (utils/args-saver)]
+    ;; We just test the two other handlers are called
+    (with-redefs [rc/handle-on-selected-view-article-id-change
+                  (fn [s p] (fn [e] (saver :change s p e)))
+                  rc/handle-on-selected-view-article-id-submit
+                  (fn [s p] (fn [e] (saver :submit s p e)))]
+      (let [handler (rc/handle-on-show-article ::state ::props)]
+        (handler ::event)
+        (is (= @args
+               [[:change ::state ::props ::event]
+                [:submit ::state ::props nil]]))))))
+
 (deftest test-article-viewer-inner
   (let [mount rc/article-viewer-inner]
 
