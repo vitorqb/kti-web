@@ -50,13 +50,9 @@ function ensureGithubToken() {
         exit 1
     fi
 }
-function compileWebpack() {
-    echo "-> Compiling js code with webpack..."
-    ./scripts/compile-webpack.bash
-}
 function compile() {
-    echo "-> Compiling..."
-    lein do clean, uberjar
+    echo "-> Preparing uberjar..."
+    ./scripts/prepare-uberjar
 }
 function maybeCreateTag() {
     if ! git tag | grep "$TAG" 
@@ -99,7 +95,6 @@ stopIfHelpFlagPassed &&
     ensureTagIsValid &&
     ensureProjectCljHasTag &&
     ensureGithubToken &&
-    compileWebpack &&
     compile &&
     maybeCreateTag &&
     pushTag &&
