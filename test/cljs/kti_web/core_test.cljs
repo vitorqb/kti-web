@@ -32,6 +32,13 @@
         (reagent/flush)
         (.removeChild (.-body js/document) div)))))
 
+(deftest test-navigated-page->show-article-event
+  (let [navigated-page->show-article-event #'rc/navigated-page->show-article-event]
+    (is (nil? (navigated-page->show-article-event {})))
+    (is (nil? (navigated-page->show-article-event {:query-params {}})))
+    (is (= [:on-show-article 9]
+           (navigated-page->show-article-event {:query-params {:id 9}})))))
+
 (defn found-in [re div]
   (let [res (.-innerHTML div)]
     (if (re-find re res)

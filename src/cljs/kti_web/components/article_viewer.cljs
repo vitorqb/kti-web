@@ -5,7 +5,8 @@
    [kti-web.models.articles :as articles]
    [kti-web.utils :as utils :refer [join-vecs call-prevent-default]]
    [kti-web.components.utils :as components-utils :refer [input submit-button]]
-   [kti-web.event-handlers :refer [handle!-vec]]))
+   [kti-web.event-handlers :refer [handle!-vec]]
+   [kti-web.event-listeners :as event-listeners]))
 
 ;; Helpers
 (defn- http-resp->status [{:keys [error? data]}]
@@ -40,7 +41,15 @@
     (swap! state reduce-on-selected-view-article-id-change new-value)))
 
 (defn handle-on-selected-view-article-id-submit [state props]
-  (fn [] (handle!-vec nil state props view-article-id-selection)))
+  (fn []
+    (handle!-vec nil state props view-article-id-selection)))
+
+(defn handle-on-show-article [state props]
+  "This event forces to component to show a specific article by id."
+  (event-listeners/as-public
+   (fn [article-id]
+     ((handle-on-selected-view-article-id-change state props) article-id)
+     ((handle-on-selected-view-article-id-submit state props)))))
 
 ;; State
 (def state (r/atom {:loading? false
@@ -76,13 +85,14 @@
 
 (defn article-viewer
   "An component to edit an article."
-  [props]
-  (fn []
-    [article-viewer-inner
-     (merge
-      @state
-      props
-      {:on-selected-view-article-id-change
-       (handle-on-selected-view-article-id-change state props)
-       :on-selected-view-article-id-submit
-       (handle-on-selected-view-article-id-submit state props)})]))
+  [{:keys [events-chan] :as props}]
+  (let [handlers {:on-selected-view-article-id-change
+                  (handle-on-selected-view-article-id-change state props)
+                  :on-selected-view-article-id-submit
+                  (handle-on-selected-view-article-id-submit state props)
+                  :on-show-article
+                  (handle-on-show-article state props)}]
+    (when events-chan
+      (event-listeners/listen! events-chan handlers))
+    (fn []
+      [article-viewer-inner (merge @state props handlers)])))

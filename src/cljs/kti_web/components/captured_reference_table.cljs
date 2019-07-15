@@ -8,7 +8,8 @@
             [reagent.core :as r]))
 
 (declare handler-wrapper-avoid-useless-fetching
-         make-action-buttons)
+         make-action-buttons
+         article-id-action-button)
 
 ;; Helpers
 (def empty-filter {:name nil :value nil})
@@ -19,11 +20,12 @@
 
 (defn make-columns
   "Returns array of maps describing the table columns."
-  [props]
+  [{:keys [on-show-article] :as props}]
   [{:header "Id"          :accessor :id            :width 50}
    {:header "Reference"   :accessor :reference     :width 400}
    {:header "Created At"  :accessor :created-at    :width 190}
-   {:header "Article Id"  :accessor :article-id    :width 100}
+   {:header "Article Id"  :accessor :article-id    :width 100
+    :cell-fn #(article-id-action-button {:on-show-article on-show-article :article-id %})}
    {:header "Review Id"   :accessor :review-id     :width 100}
    {:header "Rev. status" :accessor :review-status :width 150}
    {:header "Actions"     :accessor identity
@@ -111,6 +113,11 @@
   (fn []
     (swap! state update :filters conj empty-filter)))
 
+(defn handle-show-article [state {:keys [on-show-article]}]
+  {:pre [(or (nil? on-show-article) (fn? on-show-article))]}
+  (fn [article-id]
+    (on-show-article article-id)))
+
 ;; State
 (def initial-state
   {    :refs nil
@@ -132,6 +139,12 @@
           :onPageSizeChange #(swap! state assoc-in [:table :pageSize] %))))
 
 ;; Components
+(defn article-id-action-button
+  "Returns an action button for an article id."
+  [{:keys [article-id on-show-article]}]
+  (when (and (not (nil? article-id)) (not= article-id ""))
+    [:button {:on-click #(on-show-article article-id)} article-id]))
+
 (defn delete-captured-ref-action-button
   "Returns a action button for deleting a captured ref"
   [{:keys [on-modal-display-for-deletion row-captured-ref]}]
@@ -210,7 +223,8 @@
   [{:keys [on-modal-display-for-deletion] :as props}]
   (let [refresh! (handle-refresh! state props)
         on-filters-change (handle-filters-change state props)
-        on-add-empty-filter (handle-add-empty-filter state props)]
+        on-add-empty-filter (handle-add-empty-filter state props)
+        on-show-article (handle-show-article state props)]
     (when (nil? (:refs @state))
       (refresh! (-> @state :table (select-keys [:page :pageSize]))))
     (fn []
@@ -219,4 +233,5 @@
               :fn-refresh! refresh!
               :on-modal-display-for-deletion on-modal-display-for-deletion
               :on-filters-change on-filters-change
-              :on-add-empty-filter on-add-empty-filter)])))
+              :on-add-empty-filter on-add-empty-filter
+              :on-show-article on-show-article)])))
