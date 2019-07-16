@@ -95,7 +95,7 @@
   "A page for articles =D"
   []
   (let [navigation-subs-chan (async/chan)]
-    (subscribe-page-nav! :article navigation-subs-chan)
+    (subscribe-page-nav! ::article-page :article navigation-subs-chan)
     (async/go-loop []
       (some->> (<! navigation-subs-chan)
                navigated-page->show-article-event
