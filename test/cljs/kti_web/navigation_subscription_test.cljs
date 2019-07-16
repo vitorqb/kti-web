@@ -2,8 +2,7 @@
   (:require [kti-web.navigation-subscription :as sut]
             [cljs.core.async
              :refer [<! >!]
-             :as async
-             :include-macros true]
+             :as async]
             [cljs.test :refer-macros [is are deftest testing use-fixtures async]]))
 
 (deftest test-navigated-route->route-name
@@ -11,7 +10,18 @@
     (is (= :index
            (navigated-route->route-name {:data {:name :index}})))))
 
-(deftest test-create-page-navigation-subscription
+(deftest test-create-page-navigation-subscription--sync
+  (testing "Does not subscribe twice"
+    (let [call-count (atom 0)
+          {:keys [subscribe!]} (sut/create-page-navigation-subscription)]
+      (with-redefs [sut/sub! #(swap! call-count inc)]
+        (is (= 0 @call-count))
+        (subscribe! ::foo :article (async/chan))
+        (is (= 1 @call-count))
+        (subscribe! ::foo :article (async/chan))
+        (is (= 1 @call-count))))))
+
+(deftest test-create-page-navigation-subscription--async
   (let [subscription (sut/create-page-navigation-subscription)
         subscribe! (:subscribe! subscription)
         publish! (:publish! subscription)
@@ -19,7 +29,7 @@
         route {:data {:name page-name}}
         subscribed-buff (cljs.core.async/buffer 1)
         subscribed-chan (async/chan)
-        _ (subscribe! ::foo subscribed-chan)]
+        _ (subscribe! ::foo page-name subscribed-chan)]
     (async
      done
      (async/go
