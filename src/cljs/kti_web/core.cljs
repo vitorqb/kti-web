@@ -72,7 +72,6 @@
      [captured-reference-deletor-modal
       {:delete-captured-reference! delete-captured-reference!
        :events-chan modal-display-for-deletion-chan}]
-     [:h1 "Welcome to kti-web"]
      [:div
       [:h3 "Captured References"]
       [capture-form {:post! post-captured-reference!}]

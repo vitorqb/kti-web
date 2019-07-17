@@ -30,7 +30,7 @@
   [{:keys [text type disabled width value on-change placeholder className]}]
   [:div
    [:span text]
-   [:input {:style {:width (or width 600)}
+   [:input {:style {:width width}
             :value value
             :on-change (utils/call-with-val on-change)
             :type type

@@ -38,8 +38,7 @@
    [:span "Capture: "]
    [:input {:type "text" :value value
             :on-change (utils/call-with-val on-change)
-            :style {:width "60%" :min-width "10cm"}}]
-   [:div [:i "(current value: " value ")"]]])
+            :style {:width "60%" :min-width "10cm"}}]])
 
 (defn capture-form-inner [{:keys [loading? value result on-submit on-change]}]
   [:div

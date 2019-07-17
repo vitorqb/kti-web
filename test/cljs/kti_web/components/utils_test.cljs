@@ -54,8 +54,6 @@
       (is (true? (-> {:disabled true} mount get-inner-input-props :disabled))))
     (testing "Disabled defaults to false"
       (is (false? (-> {} mount get-inner-input-props :disabled))))
-    (testing "Width defaults to 600"
-      (is (= (-> {} mount get-inner-input-props :style :width) 600)))
     (testing "Set's width"
       (is (= (-> {:width 9} mount get-inner-input-props :style :width) 9)))
     (testing "Set's value"

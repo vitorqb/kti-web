@@ -23,10 +23,12 @@
   [{:keys [path-for-fn host-value on-host-value-change token-value
            on-token-value-change]}]
   [:header
-   [:div
+   [:div.header-content-box
+    [:h1.header-h1 "Keep This Info - Web"]
     [host-input {:on-change on-host-value-change :value host-value}]
     [token-input {:on-change on-token-value-change :value token-value}]
-    [:a {:href (path-for-fn :index)} "Home"] " | "
-    [:a {:href (path-for-fn :article)} "Articles"] " | "
-    [:a {:href (path-for-fn :review)} "Reviews"] " | "
-    [:a {:href (path-for-fn :about)} "About kti-web"]]])
+    [:div.header-routing-options
+     [:span [:a {:href (path-for-fn :index)} "Home"] " | "]
+     [:span [:a {:href (path-for-fn :article)} "Articles"] " | "]
+     [:span [:a {:href (path-for-fn :review)} "Reviews"] " | "]
+     [:span [:a {:href (path-for-fn :about)} "About kti-web"]]]]])
