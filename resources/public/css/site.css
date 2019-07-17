@@ -1,34 +1,67 @@
 .body-container {
   font-family: 'Helvetica Neue', Verdana, Helvetica, Arial, sans-serif;
-  max-width: 1600px;
   -webkit-font-smoothing: antialiased;
   font-size: 1.125em;
   color: #333;
-  line-height: 1.5em;
+}
+
+input {
+  width: 600px;
+}
+
+.header-content-box {
+  display: inline-block;
+  position: relative;
+  left: 50%;
+  transform: translate(-50%,0);
+}
+
+.host-input {
+    width: 80vw;
+    max-width: 1000px;
+}
+
+.token-input {
+    width: 80vw;
+    max-width: 1000px;
+}
+
+.header-h1 {
+    margin: 0;
+    padding: 0;
+    font-size: 25px;
+    text-align: center;
+}
+
+.header-routing-options {
+    display: inline-block;
+    position: relative;
+    left: 50%;
+    transform: translate(-50%,0);
 }
 
 h1, h2, h3 {
-  color: #000;
+    color: #000;
 }
 h1 {
-  font-size: 2.5em
+    font-size: 2.5em
 }
 
 h2 {
-  font-size: 2em
+    font-size: 2em
 }
 
 h3 {
-  font-size: 1.5em
+    font-size: 1.5em
 }
 
 a {
-  text-decoration: none;
-  color: #09f;
+    text-decoration: none;
+    color: #09f;
 }
 
 a:hover {
-  text-decoration: underline;
+    text-decoration: underline;
 }
 
 .errors-displayer {
@@ -75,4 +108,8 @@ a:hover {
 
 .remove-filter-button {
     background-color: red;
+}
+
+.ReactTable .-pagination .-center {
+    flex: 4;
 }

@@ -16,8 +16,8 @@
    [:meta {:charset "utf-8"}]
    [:meta {:name "viewport"
            :content "width=device-width, initial-scale=1"}]
-   (include-css "/css/site.css")
-   (include-css "/css/react-table.css")])
+   (include-css "/css/react-table.css")
+   (include-css "/css/site.css")])
 
 (defn loading-page []
   (html5
