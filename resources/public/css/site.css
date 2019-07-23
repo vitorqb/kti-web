@@ -9,6 +9,10 @@ input {
   width: 600px;
 }
 
+textarea {
+  font-size: 1.1rem;
+}
+
 .header-content-box {
   display: inline-block;
   position: relative;
@@ -112,4 +116,17 @@ a:hover {
 
 .ReactTable .-pagination .-center {
     flex: 4;
+}
+
+.article-viewer-inputs-div {
+    padding: 3px;
+    margin-left: 15px;
+}
+
+.invalid-input {
+    margin: 2.5px 0px;
+    border: none;
+    padding-left: 7.5px;
+    color: #111;
+    letter-spacing: 1.5;
 }

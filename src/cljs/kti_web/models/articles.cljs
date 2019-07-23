@@ -6,7 +6,7 @@
 (def inputs
   {:id [input {:text "Id" :disabled true}]
    :id-captured-reference [input {:text "Captured Ref. Id"}]
-   :description [input {:text "Description"}]
+   :description [components-utils/textarea {:text "Description"}]
    :tags [input {:text "Tags"}]
    :action-link [input {:text "Action link"}]})
 

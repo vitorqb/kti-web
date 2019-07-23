@@ -38,7 +38,7 @@
             comp (mount {:raw-editted-article factories/article-raw-spec
                          :on-raw-editted-article-change saver})]
         ;; Mounts correct value
-        (is (= (get-in comp [4 0]) components-utils/input))
+        (is (= (get-in comp [4 0]) components-utils/textarea))
         (is (= (get-in comp [4 1 :value])
                (:description factories/article-raw-spec)))
         ;; Calls on-change

@@ -37,20 +37,28 @@
                [[:change ::state ::props ::event]
                 [:submit ::state ::props nil]]))))))
 
+(deftest test-wrap-disable-input
+  (let [wrap-disable-input #'rc/wrap-disable-input
+        comp :div
+        props {}]
+    (is (= [:div {:disabled true :className "invalid-input"}]
+           (wrap-disable-input [comp props])))))
+
 (deftest test-article-viewer-inner
   (let [mount rc/article-viewer-inner]
 
     (testing "Inputs values from article"
       (let [article (assoc factories/article-raw-spec :id 928)
             comp (mount {:view-article article})]
-        (are [i k] (and (= (get-in comp [2 (+ 2 i) 0]) components-utils/input)
-                        (= (get-in comp [2 (+ 2 i) 1 :value] ::nf) (get article k))
-                        (true? (get-in comp [2 (+ 2 i) 1 :disabled])))
-          0 :id
-          1 :id-captured-reference
-          2 :description
-          3 :tags
-          4 :action-link)))
+        (are [i k component]
+            (and (= (get-in comp [2 (+ 2 i) 0]) component)
+                 (= (get-in comp [2 (+ 2 i) 1 :value] ::nf) (get article k))
+                 (true? (get-in comp [2 (+ 2 i) 1 :disabled])))
+          0 :id components-utils/input
+          1 :id-captured-reference components-utils/input
+          2 :description components-utils/textarea
+          3 :tags components-utils/input
+          4 :action-link components-utils/input)))
 
     (testing "Id input"
       (let [[args saver] (utils/args-saver)
