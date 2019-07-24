@@ -57,6 +57,21 @@
                     :view-article nil
                     :selected-view-article-id nil}))
 
+(defn- article-viewer-id-input
+  "The id input when selecting an article by it's id."
+  [{:keys [selected-view-article-id on-selected-view-article-id-change]}]
+  [input {:text "ID: "
+          :value selected-view-article-id
+          :on-change #(on-selected-view-article-id-change %)
+          :style {:width "100px"}
+          :div-style {:display "inline"}
+          :type "number"}])
+
+(defn- wrap-disable-input
+  "Wraps an input component, disabling it so it is read-only."
+  [[compon old-props]]
+  [compon (assoc old-props :disabled true :className "invalid-input")])
+
 ;; Components
 (defn article-viewer-inner
   "Pure component to edit an article"
@@ -66,21 +81,16 @@
            on-selected-view-article-id-change]
     :as props}]
   [:div
-   [:form {:on-submit (call-prevent-default
-                       #(on-selected-view-article-id-submit))}
-    [input {:text "ID: "
-            :value selected-view-article-id
-            :on-change #(on-selected-view-article-id-change %)
-            :width "100px"
-            :type "number"}]
+   [:form {:on-submit (call-prevent-default #(on-selected-view-article-id-submit))}
+    (article-viewer-id-input props)
     [submit-button]]
    (join-vecs
     [:div {:className "article-viewer-inputs-div"}]
     (for [k [:id :id-captured-reference :description :tags :action-link]
           :let [[compon old-props] (get articles/inputs k)
                 value (get view-article k)
-                new-props (assoc old-props :key k :disabled true :value value)]]
-      [compon new-props]))
+                props (assoc old-props :key k :value value)]]
+      (wrap-disable-input [compon props])))
    [components-utils/errors-displayer props]])
 
 (defn article-viewer

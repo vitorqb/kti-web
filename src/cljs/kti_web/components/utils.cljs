@@ -27,10 +27,11 @@
 
 (defn input
   "A generic input component"
-  [{:keys [text type disabled width value on-change placeholder className]}]
-  [:div
+  [{:keys [text type disabled width value on-change placeholder className style
+           div-style]}]
+  [:div {:style div-style}
    [:span text]
-   [:input {:style {:width width}
+   [:input {:style (update style :width #(or % width 600))
             :value value
             :on-change (utils/call-with-val on-change)
             :type type
@@ -40,14 +41,16 @@
 
 (defn textarea
   "A textarea component"
-  [{:keys [text disabled rows cols value on-change]}]
-  [:div
+  [{:keys [text disabled rows cols value on-change className style div-style]}]
+  [:div {:style div-style}
    [:span text]
    [:textarea {:rows (or rows 5)
                :cols (or cols 73)
                :disabled (or disabled false)
                :value value
-               :on-change (utils/call-with-val on-change)}]])
+               :on-change (utils/call-with-val on-change)
+               :className className
+               :style style}]])
 
 (defn submit-button
   ([] (submit-button {:text "Submit!"}))

@@ -42,51 +42,77 @@
 
 (deftest test-input
   (let [mount rc/input
-        get-inner-input-props #(get-in % [2 1])
-        get-text-span #(get % 1)]
+        get-inner-input-props #(get-in % [3 1])
+        get-text-span #(get % 2)]
+
     (testing "Text value"
       (is (= (-> {:text "foo"} mount get-text-span) [:span "foo"])))
+
     (testing "No text span if no text"
       (nil? (= (-> {} mount get-text-span))))
+
     (testing "Set's type"
       (is (= (-> {:type ::a} mount get-inner-input-props :type) ::a)))
+
     (testing "Set's disabled"
       (is (true? (-> {:disabled true} mount get-inner-input-props :disabled))))
+
     (testing "Disabled defaults to false"
       (is (false? (-> {} mount get-inner-input-props :disabled))))
+
     (testing "Set's width"
       (is (= (-> {:width 9} mount get-inner-input-props :style :width) 9)))
+
+    (testing "Set's other styles"
+      (is (= (-> {:style {:foo :bar :width 9}} mount get-inner-input-props :style)
+             {:foo :bar :width 9})))
+
+    (testing "Set's div style"
+      (is (= (-> {:div-style {:foo :bar}} mount (get 1))
+             {:style {:foo :bar}})))
+
     (testing "Set's value"
       (is (= (-> {:value "baz"} mount get-inner-input-props :value) "baz")))
+
     (testing "Calls on-change with change value"
       (let [[args fun] (utils/args-saver)
             comp (mount {:on-change fun})]
         ((-> comp get-inner-input-props :on-change) (utils/target-value-event "foo"))
         (is (= @args [["foo"]]))))
+
     (testing "Set's placeholder"
       (is (= (-> {:placeholder ::foo} mount get-inner-input-props :placeholder)
              ::foo)))
+
     (testing "Set's className"
       (is (= (-> {:className ::cls} mount get-inner-input-props :className)
              ::cls)))))
     
 (deftest test-textarea
   (let [mount rc/textarea
-        get-inner-textarea-props #(get-in % [2 1])]
+        get-inner-textarea-props #(get-in % [3 1])]
+
     (testing "Rows default to 5"
       (is (= (-> {} mount get-inner-textarea-props :rows) 5)))
+
     (testing "Set's rows"
       (is (= (-> {:rows 10} mount get-inner-textarea-props :rows) 10)))
+
     (testing "cols default to 73"
       (is (= (-> {} mount get-inner-textarea-props :cols) 73)))
+
     (testing "Set's cols"
       (is (= (-> {:cols 10} mount get-inner-textarea-props :cols) 10)))
+
     (testing "Disabled defaults to false"
       (is (false? (-> {} mount get-inner-textarea-props :disabled))))
+
     (testing "Set's Disabled"
       (is (true? (-> {:disabled true} mount get-inner-textarea-props :disabled))))
+
     (testing "Set's value"
       (is (= (-> {:value "foo"} mount get-inner-textarea-props :value) "foo")))
+
     (testing "Calls on-change"
       (let [[args fun] (utils/args-saver)
             comp (mount {:on-change fun})]
