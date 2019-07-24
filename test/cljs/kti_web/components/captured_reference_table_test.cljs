@@ -2,33 +2,12 @@
   (:require [cljs.core.async :refer [<! >! chan go] :as async]
             [cljs.test :refer-macros [async deftest is testing]]
             [kti-web.components.captured-reference-table :as rc]
+            [kti-web.components.captured-reference-table.helpers :as helpers]
+            [kti-web.components.captured-reference-table.handlers :as handlers]
             [kti-web.http :as http]
             [kti-web.test-factories :as factories]
             [kti-web.test-utils :as utils]
             [kti-web.components.rtable :refer [rtable]]))
-
-(deftest test-handle-filters-change
-  (let [state (atom {})
-        handler (rc/handle-filters-change state {})]
-    (is (= (handler [::foo]) {:filters [::foo]}))
-    (is (= @state {:filters [::foo]}))
-
-    (is (= (handler []) {:filters []}))
-    (is (= @state {:filters []}))))
-
-(deftest test-handle-add-empty-filter
-  (let [state (atom {:filters []})
-        handler (rc/handle-add-empty-filter state {})]
-    (is (= (handler) {:filters [rc/empty-filter]}))
-    (is (= @state {:filters [rc/empty-filter]}))))
-
-(deftest test-handle-show-article
-  ;; Simple call the props handler
-  (let [on-show-article #(apply vector :on-show-article %&)
-        props {:on-show-article on-show-article}
-        handler (rc/handle-show-article {} props)]
-    (is (= [:on-show-article 99]
-           (handler 99)))))
 
 (deftest test-article-id-action-button
 
@@ -84,8 +63,8 @@
 (deftest test-props->rtable-props
   (testing "Base"
     (with-redefs [rc/make-columns (constantly ::make-columns-response)
-                  rc/refs->data   (constantly ::refs->data-response)
-                  rc/handler-wrapper-avoid-useless-fetching
+                  helpers/refs->data   (constantly ::refs->data-response)
+                  helpers/handler-wrapper-avoid-useless-fetching
                   (constantly ::wrapper-response)]
       (let [refs [{:created-at 2} {:created-at 1}]
             page 2
@@ -188,7 +167,7 @@
           (is (= (get table 1) ::rtable-props)))))))
 
 (deftest test-refresh-paginated
-  (let [[r-before action r-after] rc/refresh-paginated-vec]
+  (let [[r-before action r-after] handlers/refresh-paginated-vec]
     (testing "r-before"
       (let [state {}
             event {:page 1 :pageSize 2}]
@@ -198,7 +177,7 @@
                 :status nil}))))
     (testing "action"
       (let [get-paginated-captured-references! identity
-            filters [{:name "foo" :value "bar"} rc/empty-filter]
+            filters [{:name "foo" :value "bar"} helpers/empty-filter]
             state-page 2
             state-page-size 100
             state {:filters filters
@@ -221,20 +200,6 @@
         (is (= (r-after {} {} nil {:error? false :data resp-data})
                {:refs [4 5]
                 :table {:pages 2 :loading false}}))))))
-
-(deftest test-handler-wrapper-avoid-useless-fetching
-  (testing "page/pageSize changes"
-    (let [props {:table {:page 1 :pageSize 2}}
-          event {:page 2 :pageSize 3}
-          handler (constantly ::handler-resp)
-          wrapped-handler (rc/handler-wrapper-avoid-useless-fetching handler props)]
-      (is (= (wrapped-handler event) ::handler-resp))))
-  (testing "no change"
-    (let [event {:page 1 :pageSize 2}
-          props {:table event}
-          handler (constantly ::handler-resp)
-          wrapped-handler (rc/handler-wrapper-avoid-useless-fetching handler props)]
-      (is (= (wrapped-handler event) nil)))))
 
 (deftest test-captured-refs-table--integration
   (let [mount rc/captured-refs-table
